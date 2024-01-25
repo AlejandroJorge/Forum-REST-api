@@ -1,16 +1,24 @@
-package repository
+package domain
 
-import "github.com/AlejandroJorge/forum-rest-api/data/model"
+type Profile struct {
+	UserID         uint
+	DisplayName    string
+	TagName        string
+	PicturePath    string
+	BackgroundPath string
+	Followers      uint
+	Follows        uint
+}
 
 type ProfileRepository interface {
 	// Returns the profile corresponding to the provided userID
-	GetByUserID(userId uint) (model.Profile, error)
+	GetByUserID(userId uint) (Profile, error)
 
 	// Returns the profile corresponding to the provided tagName
-	GetByTagName(tagName string) (model.Profile, error)
+	GetByTagName(tagName string) (Profile, error)
 
 	// Creates a new profile, the id in the model should correspond to a valid user
-	CreateNew(profile model.Profile) error
+	CreateNew(profile Profile) error
 
 	// Updates the tagName of the profile corresponding to the provided userID
 	UpdateTagName(id uint, newTagName string) error

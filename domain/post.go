@@ -1,23 +1,29 @@
-package repository
+package domain
 
-import (
-	"time"
+import "time"
 
-	"github.com/AlejandroJorge/forum-rest-api/data/model"
-)
+type Post struct {
+	PostID       uint
+	OwnerID      uint
+	Title        string
+	Description  string
+	Content      string
+	CreationDate time.Time
+	Likes        uint
+}
 
 type PostRepository interface {
 	// Returns the post corresponding to the provided id
-	GetByID(id uint) (model.Post, error)
+	GetByID(id uint) (Post, error)
 
 	// Returns the posts corresponding to the provided userID, they're sorted by likes
-	GetByUser(userId uint) ([]model.Post, error)
+	GetByUser(userId uint) ([]Post, error)
 
 	// Returns an amount of posts that occured after certain moment, they're sorted by likes
-	GetPopularAfter(moment time.Time, amount uint) ([]model.Post, error)
+	GetPopularAfter(moment time.Time, amount uint) ([]Post, error)
 
 	// Creates a new user, the id in the model is ignored
-	CreateNew(post model.Post) error
+	CreateNew(post Post) error
 
 	// Updates the title of the post corresponding to the provided id
 	UpdateTitle(id uint, newTitle string) error
