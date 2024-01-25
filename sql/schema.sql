@@ -1,6 +1,6 @@
 CREATE TABLE User (
   User_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-  Email TEXT NOT NULL,
+  Email TEXT NOT NULL UNIQUE,
   Hashed_Password TEXT NOT NULL,
   Registration_Date INTEGER NOT NULL
 );
@@ -8,7 +8,7 @@ CREATE TABLE User (
 CREATE TABLE Profile (
   User_ID INTEGER PRIMARY KEY,
   Display_Name TEXT NOT NULL,
-  Tag_Name TEXT NOT NULL,
+  Tag_Name TEXT NOT NULL UNIQUE,
   Picture_Path TEXT,
   Background_Path TEXT,
   FOREIGN KEY (User_ID) REFERENCES User(User_ID)
