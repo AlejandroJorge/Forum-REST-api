@@ -24,3 +24,9 @@ A simple REST Api for a forum like Reddit built in Go
 - [ ] Implement router
 - [ ] Implement auth
 - [ ] Implement logging
+
+# Required environment variables
+
+* SQLITE_DB_FILE_NAME
+* SQLITE_DB_FOLDER_NAME
+* PORT

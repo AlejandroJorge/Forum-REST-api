@@ -12,4 +12,6 @@ RUN make build
 
 VOLUME /app/data
 
+EXPOSE $PORT
+
 CMD ["./build/server"]
