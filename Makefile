@@ -17,3 +17,4 @@ build:
 .PHONY: clean
 clean:
 	rm -r data/
+	rm -r build/
