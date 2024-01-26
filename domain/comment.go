@@ -19,7 +19,7 @@ type CommentRepository interface {
 	GetByUser(userID uint) ([]Comment, error)
 
 	// Creates a new comment, the id in the model is ignored
-	CreateNew(comment Comment) error
+	CreateNew(comment Comment) (uint, error)
 
 	// Updates the content of the comment corresponding to the provided ID
 	UpdateContent(id uint, newContent string) error

@@ -18,7 +18,7 @@ type ProfileRepository interface {
 	GetByTagName(tagName string) (Profile, error)
 
 	// Creates a new profile, the id in the model should correspond to a valid user
-	CreateNew(profile Profile) error
+	CreateNew(profile Profile) (uint, error)
 
 	// Updates the tagName of the profile corresponding to the provided userID
 	UpdateTagName(id uint, newTagName string) error

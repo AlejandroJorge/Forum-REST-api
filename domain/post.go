@@ -23,7 +23,7 @@ type PostRepository interface {
 	GetPopularAfter(moment time.Time, amount uint) ([]Post, error)
 
 	// Creates a new user, the id in the model is ignored
-	CreateNew(post Post) error
+	CreateNew(post Post) (uint, error)
 
 	// Updates the title of the post corresponding to the provided id
 	UpdateTitle(id uint, newTitle string) error

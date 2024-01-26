@@ -21,7 +21,7 @@ type UserRepository interface {
 	GetByEmail(email string) (User, error)
 
 	// Creates a new user, the id and registrationDate in the model are ignored
-	CreateNew(user User) error
+	CreateNew(user User) (uint, error)
 
 	// Updates the email of the user corresponding to the provided ID
 	UpdateEmail(id uint, newEmail string) error
