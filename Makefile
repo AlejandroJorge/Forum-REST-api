@@ -1,20 +1,19 @@
+include .env
+export
+
+BUILD_FOLDER_NAME=build
+BUILD_EXECUTABLE_NAME=server
+
 default: run
 
 .PHONY: run
-run:
-	make clean
-	make migrate
-	go run cmd/server/main.go
+run: build
+	./$(BUILD_FOLDER_NAME)/$(BUILD_EXECUTABLE_NAME)
 
 .PHONY: build
 build:
-	go build -C cmd/server -o ../../build/
-
-.PHONY: migrate
-migrate:
-	sqlite3 data.db < sql/schema.sql
+	CGO_ENABLED=1 go build -C cmd/server -o ../../$(BUILD_FOLDER_NAME)/$(BUILD_EXECUTABLE_NAME)
 
 .PHONY: clean
 clean:
-	-rm -r build/
-	-rm data.db
+	rm -r data/
