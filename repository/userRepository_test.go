@@ -12,8 +12,7 @@ import (
 
 func TestMain(t *testing.M) {
 	fixWorkingDir()
-	config.LoadEnvVariables()
-	config.RunSQLiteMigration()
+	config.Initialize()
 	t.Run()
 }
 
