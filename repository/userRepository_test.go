@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
@@ -10,13 +8,7 @@ import (
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
-func TestMain(t *testing.M) {
-	fixWorkingDir()
-	config.Initialize()
-	t.Run()
-}
-
-func TestCreateAndRead(t *testing.T) {
+func TestUserCreate(t *testing.T) {
 	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUsers := []domain.User{
@@ -64,7 +56,7 @@ func TestCreateAndRead(t *testing.T) {
 	}
 }
 
-func TestCreateDuplicated(t *testing.T) {
+func TestUserCreateDuplicated(t *testing.T) {
 	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "sameemail@gmail.com", HashedPassword: "A1S5DA1"}
@@ -81,7 +73,7 @@ func TestCreateDuplicated(t *testing.T) {
 
 }
 
-func TestUpdate(t *testing.T) {
+func TestUserUpdate(t *testing.T) {
 	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
@@ -123,7 +115,7 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestUserDelete(t *testing.T) {
 	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
@@ -142,11 +134,4 @@ func TestDelete(t *testing.T) {
 	if err != util.ErrEmptySelection {
 		t.Errorf("Expected '%s', got ''%s''", util.ErrEmptySelection, err)
 	}
-}
-
-func fixWorkingDir() {
-	currentDir, err := os.Getwd()
-	util.PanicIfError(err)
-	workingDir := path.Dir(currentDir)
-	config.SetWorkingDir(workingDir)
 }

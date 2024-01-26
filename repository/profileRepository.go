@@ -4,34 +4,48 @@ import (
 	"database/sql"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/mattn/go-sqlite3"
 )
 
 type sqliteProfileRepository struct {
 	db *sql.DB
 }
 
-func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) error {
+func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	query := `
   INSERT INTO Profile(User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path)
   VALUES (?,?,?,?,?)
   `
-	_, err = tx.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
+	res, err := tx.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.Code == sqlite3.ErrConstraint {
+			tx.Rollback()
+			return 0, util.ErrRepeatedEntity
+		}
+	}
 	if err != nil {
 		tx.Rollback()
-		return err
+		return 0, err
+	}
+
+	newId, err := res.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return 0, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return uint(newId), nil
 }
 
 func (repo sqliteProfileRepository) Delete(id uint) error {
@@ -41,7 +55,7 @@ func (repo sqliteProfileRepository) Delete(id uint) error {
 	}
 
 	query := `
-  DELETE FROM Post
+  DELETE FROM Profile 
   WHERE User_ID = ?
   `
 	_, err = tx.Exec(query, id)
@@ -68,6 +82,9 @@ func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile
 	row := repo.db.QueryRow(query, tagName)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			err = util.ErrEmptySelection
+		}
 		return domain.Profile{}, err
 	}
 
@@ -106,6 +123,9 @@ func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, er
 	row := repo.db.QueryRow(query, userId)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			err = util.ErrEmptySelection
+		}
 		return domain.Profile{}, err
 	}
 
@@ -142,7 +162,7 @@ func (repo sqliteProfileRepository) UpdateBackgroundPath(id uint, newBackgroundP
 
 	query := `
   UPDATE Profile
-	SET Bakcground_Path = ?
+	SET Background_Path = ?
 	WHERE User_ID = ?
 	`
 	_, err = tx.Exec(query, newBackgroundPath, id)
