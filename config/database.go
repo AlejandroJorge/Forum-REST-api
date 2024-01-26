@@ -14,14 +14,13 @@ var sqliteDB *sql.DB
 
 func SQLiteDatabase() *sql.DB {
 	if sqliteDB == nil {
-		currentDir, err := os.Getwd()
-		util.PanicIfError(err)
+		currentDir := GetWorkingDir()
 
 		folderName := os.Getenv("SQLITE_DB_FOLDER_NAME")
 		fileName := os.Getenv("SQLITE_DB_FILE_NAME")
 
 		folderPath := path.Join(currentDir, folderName)
-		err = os.Mkdir(folderPath, 0755)
+		err := os.Mkdir(folderPath, 0755)
 		if err != nil && !os.IsExist(err) {
 			fmt.Println(err)
 			panic(err)
@@ -38,12 +37,14 @@ func SQLiteDatabase() *sql.DB {
 
 // Runs the migration script(s), panics if it fails
 func RunSQLiteMigration() {
-	MustRunSQLiteScript(SQLiteDatabase(), "schema.sql")
+	MustRunSQLiteScript("schema.sql")
 }
 
 // Runs a SQL script in sql/ folder
-func RunSQLiteScript(db *sql.DB, scriptName string) error {
-	filePath := path.Join("sql", scriptName)
+func RunSQLiteScript(scriptName string) error {
+	currentDir := GetWorkingDir()
+
+	filePath := path.Join(currentDir, "sql", scriptName)
 	scriptBytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -51,7 +52,7 @@ func RunSQLiteScript(db *sql.DB, scriptName string) error {
 
 	script := string(scriptBytes)
 
-	_, err = db.Exec(script)
+	_, err = SQLiteDatabase().Exec(script)
 	if err != nil {
 		return err
 	}
@@ -60,6 +61,6 @@ func RunSQLiteScript(db *sql.DB, scriptName string) error {
 }
 
 // Runs a SQL script in sql/ folder, panics when it fails
-func MustRunSQLiteScript(db *sql.DB, scriptName string) {
-	util.PanicIfError(RunSQLiteScript(db, scriptName))
+func MustRunSQLiteScript(scriptName string) {
+	util.PanicIfError(RunSQLiteScript(scriptName))
 }

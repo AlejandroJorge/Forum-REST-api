@@ -1,9 +1,15 @@
 package config
 
-import "github.com/joho/godotenv"
+import (
+	"path"
+
+	"github.com/joho/godotenv"
+)
 
 func LoadEnvVariables() {
-	err := godotenv.Load(".env")
+	currentDir := GetWorkingDir()
+	filepath := path.Join(currentDir, ".env")
+	err := godotenv.Load(filepath)
 	if err != nil {
 		panic(err)
 	}
