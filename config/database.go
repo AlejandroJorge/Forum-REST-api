@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/AlejandroJorge/forum-rest-api/util"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -31,21 +32,30 @@ func SQLiteDatabase() *sql.DB {
 	return sqliteDB
 }
 
+// Runs the migration script(s), panics if it fails
 func RunSQLiteMigration() {
-	migrationFilePath := path.Join("sql", "schema.sql")
+	MustRunSQLiteScript(SQLiteDatabase(), "schema.sql")
+}
 
-	migrationScriptBytes, err := os.ReadFile(migrationFilePath)
+// Runs a SQL script in sql/ folder
+func RunSQLiteScript(db *sql.DB, scriptName string) error {
+	filePath := path.Join("sql", scriptName)
+	scriptBytes, err := os.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	migrationScript := string(migrationScriptBytes)
+	script := string(scriptBytes)
 
-	db := SQLiteDatabase()
-
-	_, err = db.Exec(migrationScript)
+	_, err = db.Exec(script)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
+	return nil
+}
+
+// Runs a SQL script in sql/ folder, panics when it fails
+func MustRunSQLiteScript(db *sql.DB, scriptName string) {
+	util.PanicIfError(RunSQLiteScript(db, scriptName))
 }
