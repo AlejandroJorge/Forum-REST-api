@@ -26,7 +26,7 @@ func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, err
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.Code == sqlite3.ErrConstraint {
 			tx.Rollback()
-			return 0, util.ErrRepeatedEntity
+			return 0, util.ErrNoCorrespondingUser
 		}
 	}
 	if err != nil {

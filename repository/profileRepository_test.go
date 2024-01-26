@@ -25,8 +25,8 @@ func TestProfileCreate(t *testing.T) {
 	}
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "AnotherUser", TagName: "anotherone"})
-	if err != util.ErrRepeatedEntity {
-		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
+	if err != util.ErrNoCorrespondingUser {
+		t.Errorf("Expected '%s', got '%s'", util.ErrNoCorrespondingUser, err)
 	}
 }
 
