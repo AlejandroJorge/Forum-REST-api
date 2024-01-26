@@ -1,6 +1,3 @@
-include .env
-export
-
 BUILD_FOLDER_NAME=build
 BUILD_EXECUTABLE_NAME=server
 
