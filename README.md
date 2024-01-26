@@ -8,6 +8,7 @@ A simple REST Api for a forum like Reddit built in Go
 - [ ] Define functionality
 
 - [x] Create models
+- [ ] Implement validations for models
 - [x] Declare repository interfaces
 - [ ] Implement repositories for SQLite3
     - [ ] Implement custom errors
@@ -25,6 +26,8 @@ A simple REST Api for a forum like Reddit built in Go
 - [ ] Implement router
 - [ ] Implement auth
 - [ ] Implement logging
+
+- [x] Dockerize
 
 # Required environment variables
 
