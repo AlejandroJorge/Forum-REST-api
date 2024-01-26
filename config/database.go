@@ -14,19 +14,23 @@ var sqliteDB *sql.DB
 
 func SQLiteDatabase() *sql.DB {
 	if sqliteDB == nil {
-		err := os.Mkdir(os.Getenv("SQLITE_DB_FOLDER_NAME"), 0755)
+		currentDir, err := os.Getwd()
+		util.PanicIfError(err)
+
+		folderName := os.Getenv("SQLITE_DB_FOLDER_NAME")
+		fileName := os.Getenv("SQLITE_DB_FILE_NAME")
+
+		folderPath := path.Join(currentDir, folderName)
+		err = os.Mkdir(folderPath, 0755)
 		if err != nil && !os.IsExist(err) {
 			fmt.Println(err)
 			panic(err)
 		}
-		dbPath := path.Join(os.Getenv("SQLITE_DB_FOLDER_NAME"), os.Getenv("SQLITE_DB_FILE_NAME"))
+
+		dbPath := path.Join(folderPath, fileName)
 		newDB, err := sql.Open("sqlite3", dbPath)
-		if err != nil {
-			panic(err)
-		}
-		if err = newDB.Ping(); err != nil {
-			panic(err)
-		}
+		util.PanicIfError(err)
+
 		sqliteDB = newDB
 	}
 	return sqliteDB
