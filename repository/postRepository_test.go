@@ -189,3 +189,40 @@ func TestPostDelete(t *testing.T) {
 	_, err = postRepo.GetByID(postID)
 	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
+
+func TestLikes(t *testing.T) {
+	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+
+	userID, err := userRepo.CreateNew(domain.User{
+		Email: "raskld@54a.com", HashedPassword: "8796A5S41D",
+	})
+	util.EndTestIfError(err, t)
+
+	_, err = profileRepo.CreateNew(domain.Profile{
+		UserID: userID, DisplayName: "Some name", TagName: "15asd1ADCB",
+	})
+	util.EndTestIfError(err, t)
+
+	postID, err := postRepo.CreateNew(domain.Post{
+		OwnerID: userID, Title: "Another title", Description: "d3scription", Content: "6845DAWS4D6A",
+	})
+	util.EndTestIfError(err, t)
+
+	err = postRepo.AddLike(userID, postID)
+	util.EndTestIfError(err, t)
+
+	retrievedPost, err := postRepo.GetByID(postID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(1, retrievedPost.Likes, t)
+
+	err = postRepo.DeleteLike(userID, postID)
+	util.EndTestIfError(err, t)
+
+	retrievedPost, err = postRepo.GetByID(postID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(0, retrievedPost.Likes, t)
+}
