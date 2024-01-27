@@ -105,11 +105,12 @@ func TestPostGetMultiplePosts(t *testing.T) {
 	}
 }
 
-func TestPostGetPopularAfterNow(t *testing.T) {
+func TestPostGetPopularAfterFuture(t *testing.T) {
 	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
 
-	_, err := postRepo.GetPopularAfter(time.Now(), 10)
+	retrievedPosts, err := postRepo.GetPopularAfter(time.Now().Add(time.Minute), 10)
 	util.AssertEqu(util.ErrEmptySelection, err, t)
+	util.AssertEqu(0, len(retrievedPosts), t)
 }
 
 func TestPostUpdate(t *testing.T) {
