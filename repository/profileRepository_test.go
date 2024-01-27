@@ -15,28 +15,20 @@ func TestProfileCreateWithSameID(t *testing.T) {
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "someemail@gmail.com", HashedPassword: "A5S1D6"},
 	)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "SomeUser", TagName: "someone"})
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "AnotherUser", TagName: "anotherone"})
-	if err != util.ErrRepeatedEntity {
-		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
-	}
+	util.AssertEqu(err, util.ErrRepeatedEntity, t)
 }
 
 func TestProfileCreateWithNullID(t *testing.T) {
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	_, err := profileRepo.CreateNew(domain.Profile{UserID: 0, DisplayName: "NullUser", TagName: "nullone"})
-	if err != util.ErrNoCorrespondingUser {
-		t.Errorf("Expected '%s', got '%s'", util.ErrNoCorrespondingUser, err)
-	}
+	util.AssertEqu(err, util.ErrNoCorrespondingUser, t)
 }
 
 func TestProfileCreateWithSameTagName(t *testing.T) {
@@ -46,30 +38,22 @@ func TestProfileCreateWithSameTagName(t *testing.T) {
 	idFirst, err := userRepo.CreateNew(domain.User{
 		Email: "a1s86d5a1sd@gmail.com", HashedPassword: "A5S1D6"},
 	)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	_, err = profileRepo.CreateNew(domain.Profile{
 		UserID: idFirst, DisplayName: "Some name", TagName: "RepeatedTagName",
 	})
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	idSecond, err := userRepo.CreateNew(domain.User{
 		Email: "78aw5a61dw@gmail.com", HashedPassword: "A5S1D6"},
 	)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	_, err = profileRepo.CreateNew(domain.Profile{
 		UserID: idSecond, DisplayName: "Random stuff", TagName: "RepeatedTagName",
 	})
-	if err != util.ErrRepeatedEntity {
-		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
-	}
+	util.AssertEqu(err, util.ErrRepeatedEntity, t)
 }
 
 func TestProfileUpdateDisplayName(t *testing.T) {
@@ -79,74 +63,46 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "randomemail@gmail.com", HashedPassword: "A5W4da15S361AD56WD1"},
 	)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "RandomUser", TagName: "randomone"})
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	updatedDisplayName := "newDisplayName"
 	err = profileRepo.UpdateDisplayName(id, updatedDisplayName)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedProfile, err := profileRepo.GetByUserID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedProfile.DisplayName != updatedDisplayName {
-		t.Errorf("Expected '%s', got '%s'", updatedDisplayName, retrievedProfile.DisplayName)
-	}
+	util.AssertEqu(retrievedProfile.DisplayName, updatedDisplayName, t)
 
 	updatedTagName := "newTagName"
 	err = profileRepo.UpdateTagName(id, updatedTagName)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedProfile, err = profileRepo.GetByUserID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedProfile.TagName != updatedTagName {
-		t.Errorf("Expected '%s', got '%s'", updatedTagName, retrievedProfile.TagName)
-	}
+	util.AssertEqu(retrievedProfile.TagName, updatedTagName, t)
 
 	updatedPicturePath := "https://somepage.images.com/5668"
 	err = profileRepo.UpdatePicturePath(id, updatedPicturePath)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedProfile, err = profileRepo.GetByUserID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedProfile.PicturePath != updatedPicturePath {
-		t.Errorf("Expected '%s', got '%s'", updatedPicturePath, retrievedProfile.PicturePath)
-	}
+	util.AssertEqu(retrievedProfile.PicturePath, updatedPicturePath, t)
 
 	updatedBackgroundPath := "https://somepage.images.com/87983"
 	err = profileRepo.UpdateBackgroundPath(id, updatedBackgroundPath)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedProfile, err = profileRepo.GetByUserID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedProfile.BackgroundPath != updatedBackgroundPath {
-		t.Errorf("Expected '%s', got '%s'", updatedBackgroundPath, retrievedProfile.BackgroundPath)
-	}
+	util.AssertEqu(retrievedProfile.BackgroundPath, updatedBackgroundPath, t)
 }
 
 func TestProfileDelete(t *testing.T) {
@@ -156,22 +112,14 @@ func TestProfileDelete(t *testing.T) {
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "fordeleting@gmail.com", HashedPassword: "A5W4da15S361"},
 	)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "DyingUser", TagName: "ForDeleting"})
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	err = profileRepo.Delete(id)
-	if err != nil {
-		t.Errorf("Expected nil, got '%s'", err)
-	}
+	util.EndTestIfError(err, t)
 
 	_, err = profileRepo.GetByUserID(id)
-	if err != util.ErrEmptySelection {
-		t.Errorf("Expected '%s', got '%s'", util.ErrEmptySelection, err)
-	}
+	util.AssertEqu(err, util.ErrEmptySelection, t)
 }

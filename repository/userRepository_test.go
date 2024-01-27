@@ -20,40 +20,23 @@ func TestUserCreate(t *testing.T) {
 	for _, newUser := range newUsers {
 		email := newUser.Email
 		id, err := repo.CreateNew(newUser)
-		if err != nil {
-			t.Errorf("Expected nil, got %v", err)
-		}
+		util.EndTestIfError(err, t)
 
 		retrievedUser, err := repo.GetByEmail(email)
-		if err != nil {
-			t.Errorf("Expected nil, got %v", err)
-		}
+		util.EndTestIfError(err, t)
 
-		if retrievedUser.Email != newUser.Email {
-			t.Errorf("Expected '%s', got '%s'", newUser.Email, retrievedUser.Email)
-		}
-		if retrievedUser.HashedPassword != newUser.HashedPassword {
-			t.Errorf("Expected '%s', got '%s'", newUser.HashedPassword, retrievedUser.HashedPassword)
-		}
+		util.AssertEqu(retrievedUser.Email, newUser.Email, t)
+		util.AssertEqu(retrievedUser.HashedPassword, newUser.HashedPassword, t)
 
 		retrievedUser, err = repo.GetByID(id)
-		if err != nil {
-			t.Errorf("Expected nil, got %v", err)
-		}
+		util.EndTestIfError(err, t)
 
-		if retrievedUser.Email != newUser.Email {
-			t.Errorf("Expected '%s', got '%s'", newUser.Email, retrievedUser.Email)
-		}
-		if retrievedUser.HashedPassword != newUser.HashedPassword {
-			t.Errorf("Expected '%s', got '%s'", newUser.HashedPassword, retrievedUser.HashedPassword)
-		}
-
+		util.AssertEqu(retrievedUser.Email, newUser.Email, t)
+		util.AssertEqu(retrievedUser.HashedPassword, newUser.HashedPassword, t)
 	}
 
 	_, err := repo.GetByEmail("unexistentemail@gmail.com")
-	if err != util.ErrEmptySelection {
-		t.Errorf("Expected '%s', got '%s'", util.ErrEmptySelection.Error(), err)
-	}
+	util.AssertEqu(err, util.ErrEmptySelection, t)
 }
 
 func TestUserCreateDuplicated(t *testing.T) {
@@ -62,15 +45,10 @@ func TestUserCreateDuplicated(t *testing.T) {
 	newUser := domain.User{Email: "sameemail@gmail.com", HashedPassword: "A1S5DA1"}
 
 	_, err := repo.CreateNew(newUser)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	_, err = repo.CreateNew(newUser)
-	if err != util.ErrRepeatedEntity {
-		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
-	}
-
+	util.AssertEqu(err, util.ErrRepeatedEntity, t)
 }
 
 func TestUserUpdate(t *testing.T) {
@@ -79,40 +57,25 @@ func TestUserUpdate(t *testing.T) {
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 
 	id, err := repo.CreateNew(newUser)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	updatedEmail := "mysecondemail@gmail.com"
 	err = repo.UpdateEmail(id, updatedEmail)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedUser, err := repo.GetByID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedUser.Email != updatedEmail {
-		t.Errorf("Error updating user email with id %d, expected '%s', got '%s'", id, updatedEmail, retrievedUser.Email)
-		t.Errorf("Expected '%s', got '%s'", updatedEmail, retrievedUser.Email)
-	}
+	util.AssertEqu(retrievedUser.Email, updatedEmail, t)
 
 	updatedHashedPassword := "AS1D56AS1D65AS1D"
 	err = repo.UpdateHashedPassword(id, updatedHashedPassword)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	retrievedUser, err = repo.GetByID(id)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
-	if retrievedUser.HashedPassword != updatedHashedPassword {
-		t.Errorf("Expected '%s', got '%s'", updatedHashedPassword, retrievedUser.HashedPassword)
-	}
+	util.AssertEqu(retrievedUser.HashedPassword, updatedHashedPassword, t)
 }
 
 func TestUserDelete(t *testing.T) {
@@ -121,17 +84,11 @@ func TestUserDelete(t *testing.T) {
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 
 	id, err := repo.CreateNew(newUser)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	err = repo.Delete(id)
-	if err != nil {
-		t.Errorf("Expected nil, got %v", err)
-	}
+	util.EndTestIfError(err, t)
 
 	_, err = repo.GetByID(id)
-	if err != util.ErrEmptySelection {
-		t.Errorf("Expected '%s', got ''%s''", util.ErrEmptySelection, err)
-	}
+	util.AssertEqu(err, util.ErrEmptySelection, t)
 }
