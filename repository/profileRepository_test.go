@@ -124,4 +124,94 @@ func TestProfileDelete(t *testing.T) {
 	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
 
-func TestProfileAddDeleteFollowers(t *testing.T)
+func TestProfileAddDeleteFollowers(t *testing.T) {
+	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+
+	firstID, err := userRepo.CreateNew(domain.User{
+		Email: "followed@gmail.com", HashedPassword: "A5W4da15S361"},
+	)
+	util.EndTestIfError(err, t)
+
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: firstID, DisplayName: "DyingUser", TagName: "ForDeleting"})
+	util.EndTestIfError(err, t)
+
+	secondID, err := userRepo.CreateNew(domain.User{
+		Email: "follower@gmail.com", HashedPassword: "A5W4da15S361"},
+	)
+	util.EndTestIfError(err, t)
+
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: secondID, DisplayName: "DyingUser", TagName: "ForDeleting"})
+	util.EndTestIfError(err, t)
+
+	err = profileRepo.AddFollow(secondID, firstID)
+	util.EndTestIfError(err, t)
+
+	retrievedFollowed, err := profileRepo.GetByUserID(firstID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(1, retrievedFollowed.Followers, t)
+
+	retrievedFollower, err := profileRepo.GetByUserID(secondID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(1, retrievedFollower.Follows, t)
+
+	profileRepo.DeleteFollow(secondID, firstID)
+
+	retrievedFollowed, err = profileRepo.GetByUserID(firstID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(0, retrievedFollowed.Followers, t)
+
+	retrievedFollower, err = profileRepo.GetByUserID(secondID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(0, retrievedFollower.Follows, t)
+}
+
+func TestProfileGetFollowings(t *testing.T) {
+	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+
+	firstID, err := userRepo.CreateNew(domain.User{
+		Email: "followed@followed.com", HashedPassword: "A5W4da15S361"},
+	)
+	util.EndTestIfError(err, t)
+
+	firstTagName := "Followed"
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: firstID, DisplayName: "DyingUser", TagName: firstTagName})
+	util.EndTestIfError(err, t)
+
+	secondID, err := userRepo.CreateNew(domain.User{
+		Email: "follower@follower.com", HashedPassword: "A5W4da15S361"},
+	)
+	util.EndTestIfError(err, t)
+
+	secondTagName := "Follower"
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: secondID, DisplayName: "DyingUser", TagName: secondTagName})
+	util.EndTestIfError(err, t)
+
+	err = profileRepo.AddFollow(secondID, firstID)
+	util.EndTestIfError(err, t)
+
+	retrievedPosts, err := profileRepo.GetFollowersByID(firstID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(secondID, retrievedPosts[0].UserID, t)
+
+	retrievedPosts, err = profileRepo.GetFollowersByTagName(firstTagName)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(secondID, retrievedPosts[0].UserID, t)
+
+	retrievedPosts, err = profileRepo.GetFollowsByID(secondID)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(firstID, retrievedPosts[0].UserID, t)
+
+	retrievedPosts, err = profileRepo.GetFollowsByTagName(secondTagName)
+	util.EndTestIfError(err, t)
+
+	util.AssertEqu(firstID, retrievedPosts[0].UserID, t)
+}

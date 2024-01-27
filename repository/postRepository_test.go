@@ -190,7 +190,7 @@ func TestPostDelete(t *testing.T) {
 	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
 
-func TestLikes(t *testing.T) {
+func TestPostLikes(t *testing.T) {
 	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
