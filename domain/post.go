@@ -34,6 +34,12 @@ type PostRepository interface {
 	// Updates the content of the post corresponding to the provided id
 	UpdateContent(id uint, newContent string) error
 
+	// Creates the relation of liking between a profile and a post
+	AddLike(userId uint, postId uint) error
+
+	// Deletes the relation of liking between a profile and a post
+	DeleteLike(userId uint, postId uint) error
+
 	// Deletes the post corresponding to the provided ID
 	Delete(id uint) error
 }

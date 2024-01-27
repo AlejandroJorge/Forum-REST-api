@@ -17,6 +17,18 @@ type ProfileRepository interface {
 	// Returns the profile corresponding to the provided tagName
 	GetByTagName(tagName string) (Profile, error)
 
+	// Returns the profiles that follows the profile correpsonding to the provided ID
+	GetFollowersByID(userId uint) ([]Profile, error)
+
+	// Returns the profiles that follows the profile correpsonding to the provided tagName
+	GetFollowersByTagName(tagName string) ([]Profile, error)
+
+	// Returns the profiles that follows the profile correpsonding to the provided ID
+	GetFollowsByID(userId uint) ([]Profile, error)
+
+	// Returns the profiles that follows the profile correpsonding to the provided ID
+	GetFollowsByTagName(tagName string) ([]Profile, error)
+
 	// Creates a new profile, the id in the model should correspond to a valid user
 	CreateNew(profile Profile) (uint, error)
 
@@ -31,6 +43,12 @@ type ProfileRepository interface {
 
 	// Updates the backgroundPath of the profile corresponding to the provided userID
 	UpdateBackgroundPath(id uint, newBackgroundPath string) error
+
+	// Creates the relation of following between a follower and a followed
+	AddFollow(followerId uint, followedId uint) error
+
+	// Deletes the relation of following between a follower and a followed
+	DeleteFollow(followerId uint, followedId uint) error
 
 	// Deletes the profile corresponding to the provided userID
 	Delete(id uint) error

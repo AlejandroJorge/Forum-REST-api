@@ -24,6 +24,12 @@ type CommentRepository interface {
 	// Updates the content of the comment corresponding to the provided ID
 	UpdateContent(id uint, newContent string) error
 
+	// Creates the relation of liking between a profile and a comment
+	AddLike(userId uint, commentId uint) error
+
+	// Deletes the relation of liking between a profile and a comment
+	DeleteLike(userId uint, commentId uint) error
+
 	// Deletes the comment corresponding to the provided ID
 	Delete(id uint) error
 }
