@@ -123,3 +123,5 @@ func TestProfileDelete(t *testing.T) {
 	_, err = profileRepo.GetByUserID(id)
 	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
+
+func TestProfileAddDeleteFollowers(t *testing.T)
