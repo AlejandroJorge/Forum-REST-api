@@ -80,38 +80,19 @@ func (repo sqliteProfileRepository) Delete(id uint) error {
 func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile, error) {
 	var profile domain.Profile
 	query := `
-  SELECT User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path 
-  FROM Profile
-  WHERE Tag_Name = ?
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.Tag_Name = ?
+	GROUP BY p.User_ID
   `
 	row := repo.db.QueryRow(query, tagName)
-	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath)
+	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = util.ErrEmptySelection
 		}
-		return domain.Profile{}, err
-	}
-
-	query = `
-	SELECT COUNT(*)
-	FROM Following
-	WHERE Followed_ID = ?
-	`
-	row = repo.db.QueryRow(query, profile.UserID)
-	err = row.Scan(&profile.Followers)
-	if err != nil {
-		return domain.Profile{}, err
-	}
-
-	query = `
-	SELECT COUNT(*)
-	FROM Following
-	WHERE Follower_ID = ?
-	`
-	row = repo.db.QueryRow(query, profile.UserID)
-	err = row.Scan(&profile.Follows)
-	if err != nil {
 		return domain.Profile{}, err
 	}
 
@@ -121,38 +102,19 @@ func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile
 func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, error) {
 	var profile domain.Profile
 	query := `
-  SELECT User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path 
-  FROM Profile
-  WHERE User_ID = ?
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.User_ID = ?
+	GROUP BY p.User_ID
   `
 	row := repo.db.QueryRow(query, userId)
-	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath)
+	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = util.ErrEmptySelection
 		}
-		return domain.Profile{}, err
-	}
-
-	query = `
-	SELECT COUNT(*)
-	FROM Following
-	WHERE Followed_ID = ?
-	`
-	row = repo.db.QueryRow(query, profile.UserID)
-	err = row.Scan(&profile.Followers)
-	if err != nil {
-		return domain.Profile{}, err
-	}
-
-	query = `
-	SELECT COUNT(*)
-	FROM Following
-	WHERE Follower_ID = ?
-	`
-	row = repo.db.QueryRow(query, profile.UserID)
-	err = row.Scan(&profile.Follows)
-	if err != nil {
 		return domain.Profile{}, err
 	}
 
