@@ -8,8 +8,8 @@ func EndTestIfError(err error, t *testing.T) {
 	}
 }
 
-func AssertEqu(a interface{}, b interface{}, t *testing.T) {
-	if a != b {
-		t.Errorf("Expected '%v', got '%v'", a, b)
+func AssertEqu(expected interface{}, got interface{}, t *testing.T) {
+	if expected != got {
+		t.Errorf("Expected '%v', got '%v'", expected, got)
 	}
 }

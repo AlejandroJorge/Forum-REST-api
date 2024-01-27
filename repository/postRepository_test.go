@@ -33,17 +33,17 @@ func TestPostCreateAndRead(t *testing.T) {
 	retrievedPost, err := postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedPost.Title, newPost.Title, t)
-	util.AssertEqu(retrievedPost.Description, newPost.Description, t)
-	util.AssertEqu(retrievedPost.Content, newPost.Content, t)
-	util.AssertEqu(retrievedPost.OwnerID, newPost.OwnerID, t)
+	util.AssertEqu(newPost.Title, retrievedPost.Title, t)
+	util.AssertEqu(newPost.Description, retrievedPost.Description, t)
+	util.AssertEqu(newPost.Content, retrievedPost.Content, t)
+	util.AssertEqu(newPost.OwnerID, retrievedPost.OwnerID, t)
 }
 
 func TestPostCreateForNoUser(t *testing.T) {
 	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
 
 	_, err := postRepo.CreateNew(domain.Post{Title: "My first post", OwnerID: 0, Description: "Lorem ipsum", Content: "This is the first post, the content is..."})
-	util.AssertEqu(err, util.ErrNoCorrespondingUser, t)
+	util.AssertEqu(util.ErrNoCorrespondingUser, err, t)
 }
 
 func TestPostCreateForNoProfile(t *testing.T) {
@@ -58,7 +58,7 @@ func TestPostCreateForNoProfile(t *testing.T) {
 	_, err = postRepo.CreateNew(domain.Post{
 		Title: "Some random title", Content: "Something", Description: "asdasd", OwnerID: userID,
 	})
-	util.AssertEqu(err, util.ErrNoCorrespondingProfile, t)
+	util.AssertEqu(util.ErrNoCorrespondingProfile, err, t)
 }
 
 func TestPostGetMultiplePosts(t *testing.T) {
@@ -114,7 +114,7 @@ func TestPostGetPopularAfterNow(t *testing.T) {
 	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
 
 	_, err := postRepo.GetPopularAfter(time.Now(), 10)
-	util.AssertEqu(err, util.ErrEmptySelection, t)
+	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
 
 func TestPostUpdate(t *testing.T) {
@@ -145,7 +145,7 @@ func TestPostUpdate(t *testing.T) {
 	retrievedPost, err := postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedPost.Title, updatedTitle, t)
+	util.AssertEqu(updatedTitle, retrievedPost.Title, t)
 
 	updatedDescription := "Some description #a5sd"
 	err = postRepo.UpdateDescription(postID, updatedDescription)
@@ -154,7 +154,7 @@ func TestPostUpdate(t *testing.T) {
 	retrievedPost, err = postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedPost.Description, updatedDescription, t)
+	util.AssertEqu(updatedDescription, retrievedPost.Description, t)
 
 	updatedContent := "Content a6s54da6s5d asda Some more content"
 	err = postRepo.UpdateContent(postID, updatedContent)
@@ -163,7 +163,7 @@ func TestPostUpdate(t *testing.T) {
 	retrievedPost, err = postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedPost.Content, updatedContent, t)
+	util.AssertEqu(updatedContent, retrievedPost.Content, t)
 }
 
 func TestPostDelete(t *testing.T) {
@@ -191,5 +191,5 @@ func TestPostDelete(t *testing.T) {
 	util.EndTestIfError(err, t)
 
 	_, err = postRepo.GetByID(postID)
-	util.AssertEqu(err, util.ErrEmptySelection)
+	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
