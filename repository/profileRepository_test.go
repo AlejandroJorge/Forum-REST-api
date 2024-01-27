@@ -8,7 +8,7 @@ import (
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
-func TestProfileCreate(t *testing.T) {
+func TestProfileCreateWithSameID(t *testing.T) {
 	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 
@@ -28,14 +28,51 @@ func TestProfileCreate(t *testing.T) {
 	if err != util.ErrRepeatedEntity {
 		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
 	}
+}
 
-	_, err = profileRepo.CreateNew(domain.Profile{UserID: 0, DisplayName: "NullUser", TagName: "nullone"})
+func TestProfileCreateWithNullID(t *testing.T) {
+	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+
+	_, err := profileRepo.CreateNew(domain.Profile{UserID: 0, DisplayName: "NullUser", TagName: "nullone"})
 	if err != util.ErrNoCorrespondingUser {
 		t.Errorf("Expected '%s', got '%s'", util.ErrNoCorrespondingUser, err)
 	}
 }
 
-func TestProfileUpdate(t *testing.T) {
+func TestProfileCreateWithSameTagName(t *testing.T) {
+	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+
+	idFirst, err := userRepo.CreateNew(domain.User{
+		Email: "a1s86d5a1sd@gmail.com", HashedPassword: "A5S1D6"},
+	)
+	if err != nil {
+		t.Errorf("Expected nil, got '%s'", err)
+	}
+
+	_, err = profileRepo.CreateNew(domain.Profile{
+		UserID: idFirst, DisplayName: "Some name", TagName: "RepeatedTagName",
+	})
+	if err != nil {
+		t.Errorf("Expected nil, got '%s'", err)
+	}
+
+	idSecond, err := userRepo.CreateNew(domain.User{
+		Email: "78aw5a61dw@gmail.com", HashedPassword: "A5S1D6"},
+	)
+	if err != nil {
+		t.Errorf("Expected nil, got '%s'", err)
+	}
+
+	_, err = profileRepo.CreateNew(domain.Profile{
+		UserID: idSecond, DisplayName: "Random stuff", TagName: "RepeatedTagName",
+	})
+	if err != util.ErrRepeatedEntity {
+		t.Errorf("Expected '%s', got '%s'", util.ErrRepeatedEntity, err)
+	}
+}
+
+func TestProfileUpdateDisplayName(t *testing.T) {
 	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 

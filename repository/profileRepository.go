@@ -30,6 +30,9 @@ func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, err
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			err = util.ErrNoCorrespondingUser
 		}
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			err = util.ErrRepeatedEntity
+		}
 	}
 	if err != nil {
 		tx.Rollback()
