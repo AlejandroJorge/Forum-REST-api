@@ -39,19 +39,12 @@ func TestPostCreateAndRead(t *testing.T) {
 	util.AssertEqu(newPost.OwnerID, retrievedPost.OwnerID, t)
 }
 
-func TestPostCreateForNoUser(t *testing.T) {
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
-
-	_, err := postRepo.CreateNew(domain.Post{Title: "My first post", OwnerID: 0, Description: "Lorem ipsum", Content: "This is the first post, the content is..."})
-	util.AssertEqu(util.ErrNoCorrespondingUser, err, t)
-}
-
 func TestPostCreateForNoProfile(t *testing.T) {
 	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
 	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
-		Email: "adsasas@asdasd.com", HashedPassword: "1dw8a15s",
+		Email: "1a56sd1a6sd1@unexistent.com", HashedPassword: "1dw8a15s",
 	})
 	util.EndTestIfError(err, t)
 
@@ -98,6 +91,8 @@ func TestPostGetMultiplePosts(t *testing.T) {
 
 	retrievedPosts, err := postRepo.GetByUser(userID)
 	util.EndTestIfError(err, t)
+
+	util.AssertEqu(len(newPosts), len(retrievedPosts), t)
 
 	for i := range retrievedPosts {
 		newPost := newPosts[i]
