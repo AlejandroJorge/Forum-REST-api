@@ -24,9 +24,11 @@ func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, err
   `
 	res, err := tx.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
-		if sqliteErr.Code == sqlite3.ErrConstraint {
-			tx.Rollback()
-			return 0, util.ErrNoCorrespondingUser
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+			err = util.ErrRepeatedEntity
+		}
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
+			err = util.ErrNoCorrespondingUser
 		}
 	}
 	if err != nil {
