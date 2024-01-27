@@ -27,7 +27,9 @@ func SQLiteDatabase() *sql.DB {
 		}
 
 		dbPath := path.Join(folderPath, fileName)
-		newDB, err := sql.Open("sqlite3", dbPath)
+
+		connectionStr := "file:" + dbPath + "?_journal=WAL&_foreign_keys=true"
+		newDB, err := sql.Open("sqlite3", connectionStr)
 		util.PanicIfError(err)
 
 		sqliteDB = newDB
