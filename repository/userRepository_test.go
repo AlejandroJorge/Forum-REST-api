@@ -25,18 +25,18 @@ func TestUserCreate(t *testing.T) {
 		retrievedUser, err := repo.GetByEmail(email)
 		util.EndTestIfError(err, t)
 
-		util.AssertEqu(retrievedUser.Email, newUser.Email, t)
-		util.AssertEqu(retrievedUser.HashedPassword, newUser.HashedPassword, t)
+		util.AssertEqu(newUser.Email, retrievedUser.Email, t)
+		util.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
 
 		retrievedUser, err = repo.GetByID(id)
 		util.EndTestIfError(err, t)
 
-		util.AssertEqu(retrievedUser.Email, newUser.Email, t)
-		util.AssertEqu(retrievedUser.HashedPassword, newUser.HashedPassword, t)
+		util.AssertEqu(newUser.Email, retrievedUser.Email, t)
+		util.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
 	}
 
 	_, err := repo.GetByEmail("unexistentemail@gmail.com")
-	util.AssertEqu(err, util.ErrEmptySelection, t)
+	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
 
 func TestUserCreateDuplicated(t *testing.T) {
@@ -48,7 +48,7 @@ func TestUserCreateDuplicated(t *testing.T) {
 	util.EndTestIfError(err, t)
 
 	_, err = repo.CreateNew(newUser)
-	util.AssertEqu(err, util.ErrRepeatedEntity, t)
+	util.AssertEqu(util.ErrRepeatedEntity, err, t)
 }
 
 func TestUserUpdate(t *testing.T) {
@@ -66,7 +66,7 @@ func TestUserUpdate(t *testing.T) {
 	retrievedUser, err := repo.GetByID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedUser.Email, updatedEmail, t)
+	util.AssertEqu(updatedEmail, retrievedUser.Email, t)
 
 	updatedHashedPassword := "AS1D56AS1D65AS1D"
 	err = repo.UpdateHashedPassword(id, updatedHashedPassword)
@@ -75,7 +75,7 @@ func TestUserUpdate(t *testing.T) {
 	retrievedUser, err = repo.GetByID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedUser.HashedPassword, updatedHashedPassword, t)
+	util.AssertEqu(updatedHashedPassword, retrievedUser.HashedPassword, t)
 }
 
 func TestUserDelete(t *testing.T) {
@@ -90,5 +90,5 @@ func TestUserDelete(t *testing.T) {
 	util.EndTestIfError(err, t)
 
 	_, err = repo.GetByID(id)
-	util.AssertEqu(err, util.ErrEmptySelection, t)
+	util.AssertEqu(util.ErrEmptySelection, err, t)
 }

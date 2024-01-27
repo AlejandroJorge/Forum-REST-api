@@ -21,14 +21,14 @@ func TestProfileCreateWithSameID(t *testing.T) {
 	util.EndTestIfError(err, t)
 
 	id, err = profileRepo.CreateNew(domain.Profile{UserID: id, DisplayName: "AnotherUser", TagName: "anotherone"})
-	util.AssertEqu(err, util.ErrRepeatedEntity, t)
+	util.AssertEqu(util.ErrRepeatedEntity, err, t)
 }
 
 func TestProfileCreateWithNullID(t *testing.T) {
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	_, err := profileRepo.CreateNew(domain.Profile{UserID: 0, DisplayName: "NullUser", TagName: "nullone"})
-	util.AssertEqu(err, util.ErrNoCorrespondingUser, t)
+	util.AssertEqu(util.ErrNoCorrespondingUser, err, t)
 }
 
 func TestProfileCreateWithSameTagName(t *testing.T) {
@@ -53,7 +53,7 @@ func TestProfileCreateWithSameTagName(t *testing.T) {
 	_, err = profileRepo.CreateNew(domain.Profile{
 		UserID: idSecond, DisplayName: "Random stuff", TagName: "RepeatedTagName",
 	})
-	util.AssertEqu(err, util.ErrRepeatedEntity, t)
+	util.AssertEqu(util.ErrRepeatedEntity, err, t)
 }
 
 func TestProfileUpdateDisplayName(t *testing.T) {
@@ -75,7 +75,7 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 	retrievedProfile, err := profileRepo.GetByUserID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedProfile.DisplayName, updatedDisplayName, t)
+	util.AssertEqu(updatedDisplayName, retrievedProfile.DisplayName, t)
 
 	updatedTagName := "newTagName"
 	err = profileRepo.UpdateTagName(id, updatedTagName)
@@ -84,7 +84,7 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 	retrievedProfile, err = profileRepo.GetByUserID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedProfile.TagName, updatedTagName, t)
+	util.AssertEqu(updatedTagName, retrievedProfile.TagName, t)
 
 	updatedPicturePath := "https://somepage.images.com/5668"
 	err = profileRepo.UpdatePicturePath(id, updatedPicturePath)
@@ -93,7 +93,7 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 	retrievedProfile, err = profileRepo.GetByUserID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedProfile.PicturePath, updatedPicturePath, t)
+	util.AssertEqu(updatedPicturePath, retrievedProfile.PicturePath, t)
 
 	updatedBackgroundPath := "https://somepage.images.com/87983"
 	err = profileRepo.UpdateBackgroundPath(id, updatedBackgroundPath)
@@ -102,7 +102,7 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 	retrievedProfile, err = profileRepo.GetByUserID(id)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(retrievedProfile.BackgroundPath, updatedBackgroundPath, t)
+	util.AssertEqu(updatedBackgroundPath, retrievedProfile.BackgroundPath, t)
 }
 
 func TestProfileDelete(t *testing.T) {
@@ -121,5 +121,5 @@ func TestProfileDelete(t *testing.T) {
 	util.EndTestIfError(err, t)
 
 	_, err = profileRepo.GetByUserID(id)
-	util.AssertEqu(err, util.ErrEmptySelection, t)
+	util.AssertEqu(util.ErrEmptySelection, err, t)
 }
