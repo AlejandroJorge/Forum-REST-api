@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/AlejandroJorge/forum-rest-api/util"
+)
 
 type Post struct {
 	PostID       uint
@@ -10,6 +14,19 @@ type Post struct {
 	Content      string
 	CreationDate time.Time
 	Likes        uint
+}
+
+func (p Post) Validate() bool {
+	conditions := []bool{
+		p.PostID != 0,
+		p.OwnerID != 0,
+		p.Title != "",
+		p.Description != "",
+		p.Content != "",
+		!p.CreationDate.IsZero(),
+	}
+
+	return util.MergeAND(conditions)
 }
 
 type PostRepository interface {

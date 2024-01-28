@@ -1,11 +1,24 @@
 package domain
 
+import "github.com/AlejandroJorge/forum-rest-api/util"
+
 type Comment struct {
 	ID      uint
 	PostID  uint
 	UserID  uint
 	Content string
 	Likes   uint
+}
+
+func (c Comment) Validate() bool {
+	conditions := []bool{
+		c.ID != 0,
+		c.PostID != 0,
+		c.UserID != 0,
+		c.Content != "",
+	}
+
+	return util.MergeAND(conditions)
 }
 
 type CommentRepository interface {

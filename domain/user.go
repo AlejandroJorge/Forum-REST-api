@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/AlejandroJorge/forum-rest-api/util"
+)
 
 type User struct {
 	ID uint
@@ -11,6 +15,17 @@ type User struct {
 
 	// Meta
 	RegistrationDate time.Time
+}
+
+func (u User) Validate() bool {
+	conditions := []bool{
+		u.ID != 0,
+		u.Email != "",
+		u.HashedPassword != "",
+		!u.RegistrationDate.IsZero(),
+	}
+
+	return util.MergeAND(conditions)
 }
 
 type UserRepository interface {

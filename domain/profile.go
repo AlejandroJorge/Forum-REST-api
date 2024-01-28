@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/AlejandroJorge/forum-rest-api/util"
+
 type Profile struct {
 	UserID         uint
 	DisplayName    string
@@ -8,6 +10,16 @@ type Profile struct {
 	BackgroundPath string
 	Followers      uint
 	Follows        uint
+}
+
+func (p Profile) Validate() bool {
+	conditions := []bool{
+		p.UserID != 0,
+		p.DisplayName != "",
+		p.TagName != "",
+	}
+
+	return util.MergeAND(conditions)
 }
 
 type ProfileRepository interface {
