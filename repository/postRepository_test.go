@@ -216,7 +216,7 @@ func TestPostLikes(t *testing.T) {
 	retrievedPost, err := postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(1, retrievedPost.Likes, t)
+	util.AssertEqu(uint(1), retrievedPost.Likes, t)
 
 	err = postRepo.DeleteLike(userID, postID)
 	util.EndTestIfError(err, t)
@@ -224,5 +224,5 @@ func TestPostLikes(t *testing.T) {
 	retrievedPost, err = postRepo.GetByID(postID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(0, retrievedPost.Likes, t)
+	util.AssertEqu(uint(0), retrievedPost.Likes, t)
 }

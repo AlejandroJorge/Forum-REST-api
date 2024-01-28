@@ -129,19 +129,19 @@ func TestProfileAddDeleteFollowers(t *testing.T) {
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	firstID, err := userRepo.CreateNew(domain.User{
-		Email: "followed@gmail.com", HashedPassword: "A5W4da15S361"},
+		Email: "followed@somemail.com", HashedPassword: "A5W4da15S361"},
 	)
 	util.EndTestIfError(err, t)
 
-	_, err = profileRepo.CreateNew(domain.Profile{UserID: firstID, DisplayName: "DyingUser", TagName: "ForDeleting"})
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: firstID, DisplayName: "DyingUser", TagName: "SA51S6D51"})
 	util.EndTestIfError(err, t)
 
 	secondID, err := userRepo.CreateNew(domain.User{
-		Email: "follower@gmail.com", HashedPassword: "A5W4da15S361"},
+		Email: "follower@somemail.com", HashedPassword: "A5W4da15S361"},
 	)
 	util.EndTestIfError(err, t)
 
-	_, err = profileRepo.CreateNew(domain.Profile{UserID: secondID, DisplayName: "DyingUser", TagName: "ForDeleting"})
+	_, err = profileRepo.CreateNew(domain.Profile{UserID: secondID, DisplayName: "DyingUser", TagName: "1A8W5D61AW2D135A"})
 	util.EndTestIfError(err, t)
 
 	err = profileRepo.AddFollow(secondID, firstID)

@@ -12,6 +12,30 @@ type sqliteProfileRepository struct {
 	db *sql.DB
 }
 
+func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) error {
+	panic("unimplemented")
+}
+
+func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uint) error {
+	panic("unimplemented")
+}
+
+func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Profile, error) {
+	panic("unimplemented")
+}
+
+func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
+	panic("unimplemented")
+}
+
+func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profile, error) {
+	panic("unimplemented")
+}
+
+func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
+	panic("unimplemented")
+}
+
 func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {

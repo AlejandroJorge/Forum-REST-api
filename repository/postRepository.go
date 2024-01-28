@@ -13,6 +13,53 @@ type sqlitePostRepository struct {
 	db *sql.DB
 }
 
+func (repo sqlitePostRepository) AddLike(userId uint, postId uint) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `
+	INSERT INTO Post_Likings(Liker_ID, Post_ID)
+	VALUES (?,?)
+	`
+	_, err = tx.Exec(query, userId, postId)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `
+	DELETE FROM Post_Likings
+	WHERE Liker_ID = ? AND Post_ID = ?
+	`
+	_, err = tx.Exec(query, userId, postId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (repo sqlitePostRepository) CreateNew(post domain.Post) (uint, error) {
 	tx, err := repo.db.Begin()
 	if err != nil {
