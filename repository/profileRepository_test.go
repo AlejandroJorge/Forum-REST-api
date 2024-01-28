@@ -150,27 +150,27 @@ func TestProfileAddDeleteFollowers(t *testing.T) {
 	retrievedFollowed, err := profileRepo.GetByUserID(firstID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(1, retrievedFollowed.Followers, t)
+	util.AssertEqu(uint(1), retrievedFollowed.Followers, t)
 
 	retrievedFollower, err := profileRepo.GetByUserID(secondID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(1, retrievedFollower.Follows, t)
+	util.AssertEqu(uint(1), retrievedFollower.Follows, t)
 
 	profileRepo.DeleteFollow(secondID, firstID)
 
 	retrievedFollowed, err = profileRepo.GetByUserID(firstID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(0, retrievedFollowed.Followers, t)
+	util.AssertEqu(uint(0), retrievedFollowed.Followers, t)
 
 	retrievedFollower, err = profileRepo.GetByUserID(secondID)
 	util.EndTestIfError(err, t)
 
-	util.AssertEqu(0, retrievedFollower.Follows, t)
+	util.AssertEqu(uint(0), retrievedFollower.Follows, t)
 }
 
-func TestProfileGetFollowings(t *testing.T) {
+func TestProfileGetFollowingsAndFollows(t *testing.T) {
 	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
 	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
 

@@ -234,13 +234,13 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 		posts = append(posts, post)
 	}
 
-	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
-	}
-
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(posts) == 0 {
+		return nil, util.ErrEmptySelection
 	}
 
 	return posts, nil

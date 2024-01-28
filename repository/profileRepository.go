@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/util"
@@ -13,27 +14,237 @@ type sqliteProfileRepository struct {
 }
 
 func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) error {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `
+	INSERT INTO Following(Follower_ID,Followed_ID,Following_Date)
+	VALUES (?,?,?)
+	`
+	_, err = tx.Exec(query, followerId, followedId, time.Now().Unix())
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uint) error {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	query := `
+	DELETE FROM Following
+	WHERE Follower_ID = ? AND Followed_ID = ?
+	`
+	_, err = tx.Exec(query, followerId, followedId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Profile, error) {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var posts []domain.Profile
+	query := `
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.User_ID IN (
+		SELECT Follower_ID FROM Following WHERE Followed_ID = ?
+	)
+	GROUP BY p.User_ID
+	`
+	rows, err := tx.Query(query, userId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for rows.Next() {
+		var post domain.Profile
+		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(posts) == 0 {
+		return nil, util.ErrEmptySelection
+	}
+
+	return posts, nil
 }
 
 func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var posts []domain.Profile
+	query := `
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.User_ID IN (
+		SELECT f.Follower_ID FROM Following f, Profile p 
+		WHERE f.Followed_ID = p.User_ID AND p.Tag_Name = ?
+	)
+	GROUP BY p.User_ID
+	`
+	rows, err := tx.Query(query, tagName)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for rows.Next() {
+		var post domain.Profile
+		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(posts) == 0 {
+		return nil, util.ErrEmptySelection
+	}
+
+	return posts, nil
 }
 
 func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profile, error) {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var posts []domain.Profile
+	query := `
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.User_ID IN (
+		SELECT Followed_ID FROM Following WHERE Follower_ID = ?
+	)
+	GROUP BY p.User_ID
+	`
+	rows, err := tx.Query(query, userId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for rows.Next() {
+		var post domain.Profile
+		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(posts) == 0 {
+		return nil, util.ErrEmptySelection
+	}
+
+	return posts, nil
 }
 
 func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
-	panic("unimplemented")
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var posts []domain.Profile
+	query := `
+  SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
+  FROM Profile p
+	LEFT JOIN Following f1 ON p.User_ID = f1.Followed_ID
+	LEFT JOIN Following f2 ON p.User_ID = f2.Follower_ID
+  WHERE p.User_ID IN (
+		SELECT f.Followed_ID FROM Following f, Profile p 
+		WHERE f.Follower_ID = p.User_ID AND p.Tag_Name = ?
+	)
+	GROUP BY p.User_ID
+	`
+	rows, err := tx.Query(query, tagName)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for rows.Next() {
+		var post domain.Profile
+		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(posts) == 0 {
+		return nil, util.ErrEmptySelection
+	}
+
+	return posts, nil
 }
 
 func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, error) {
