@@ -43,3 +43,43 @@ type PostRepository interface {
 	// Deletes the post corresponding to the provided ID
 	Delete(id uint) error
 }
+
+type PostService interface {
+	// Returns the post corresponding to the provided id
+	GetByID(id uint) (Post, error)
+
+	// Returns the posts corresponding to the provided userID, they're sorted by likes
+	GetByUser(userId uint) ([]Post, error)
+
+	GetPopularToday() ([]Post, error)
+
+	GetPopularLastWeek() ([]Post, error)
+
+	GetPopularLastMonth() ([]Post, error)
+
+	GetPopularAllTime() ([]Post, error)
+
+	// Creates a new user, the id in the model is ignored
+	CreateNew(createInfo struct {
+		OwnerID     uint
+		Title       string
+		Description string
+		Content     string
+	}) (uint, error)
+
+	//
+	Update(id uint, updateInfo struct {
+		UpdatedTitle       string
+		UpdatedDescription string
+		UpdatedContent     string
+	})
+
+	// Creates the relation of liking between a profile and a post
+	AddLike(userId uint, postId uint) error
+
+	// Deletes the relation of liking between a profile and a post
+	DeleteLike(userId uint, postId uint) error
+
+	// Deletes the post corresponding to the provided ID
+	Delete(id uint) error
+}

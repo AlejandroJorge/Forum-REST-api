@@ -32,3 +32,26 @@ type UserRepository interface {
 	// Deletes the user corresponding to the provided ID
 	Delete(id uint) error
 }
+
+type UserService interface {
+	// Retrieves a user by the id provided
+	GetByID(id uint) (User, error)
+
+	// Retrieves a user by the email provided
+	GetByEmail(email string) (User, error)
+
+	// Creates a new user with the info provided
+	CreateNew(createInfo struct {
+		NewEmail          string
+		NewHashedPassword string
+	}) (uint, error)
+
+	// Updates the authentication info of the user with corresponding id
+	Update(id uint, updateInfo struct {
+		UpdatedEmail          string
+		UpdatedHashedPassword string
+	}) error
+
+	// Deletes the user with the provided id
+	Delete(id uint) error
+}
