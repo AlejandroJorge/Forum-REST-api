@@ -34,14 +34,28 @@ func initializeUserRoutes(router *mux.Router) {
 	service := service.NewUserService(repository)
 	controller := controller.NewUserController(service)
 
-	router.HandleFunc("/api/v1/user", controller.Create).Methods("POST")
-	router.HandleFunc("/api/v1/user/{id}", controller.Get).Methods("GET")
-	router.HandleFunc("/api/v1/user/{id}", controller.Update).Methods("PUT")
-	router.HandleFunc("/api/v1/user/{id}", controller.Delete).Methods("DELETE")
+	router.HandleFunc("/api/v1/users", controller.Create).Methods("POST")
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Get).Methods("GET")
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Update).Methods("PUT")
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Delete).Methods("DELETE")
 }
 
 func initializeProfileRoutes(router *mux.Router) {
+	repository := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	service := service.NewProfileService(repository)
+	controller := controller.NewProfileController(service)
 
+	router.HandleFunc("/api/v1/profiles", controller.Create).Methods("POST")
+	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.GetByID).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}", controller.GetByTagName).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}/followers", controller.GetFollowersByID).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/followers", controller.GetFollowersByTagName).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}/follows", controller.GetFollowsByID).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/follows", controller.GetFollowsByTagName).Methods("GET")
+	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.Update).Methods("PUT")
+	router.HandleFunc("/api/v1/profiles/follows", controller.CreateFollow).Methods("POST")
+	router.HandleFunc("/api/v1/profiles/follows", controller.DeleteFollow).Methods("DELETE")
+	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.Delete).Methods("DELETE")
 }
 
 func initializePostRoutes(router *mux.Router) {
