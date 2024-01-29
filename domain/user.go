@@ -57,14 +57,14 @@ type UserService interface {
 
 	// Creates a new user with the info provided
 	CreateNew(createInfo struct {
-		NewEmail          string
-		NewHashedPassword string
+		NewEmail    string
+		NewPassword string
 	}) (uint, error)
 
 	// Updates the authentication info of the user with corresponding id
 	Update(id uint, updateInfo struct {
-		UpdatedEmail          string
-		UpdatedHashedPassword string
+		UpdatedEmail    string
+		UpdatedPassword string
 	}) error
 
 	// Deletes the user with the provided id

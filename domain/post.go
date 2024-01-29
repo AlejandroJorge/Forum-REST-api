@@ -89,7 +89,7 @@ type PostService interface {
 		UpdatedTitle       string
 		UpdatedDescription string
 		UpdatedContent     string
-	})
+	}) error
 
 	// Creates the relation of liking between a profile and a post
 	AddLike(userId uint, postId uint) error

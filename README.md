@@ -13,10 +13,12 @@ A simple REST Api for a forum like Reddit built in Go
 - [x] Implement repositories for SQLite3
     - [x] Implement custom errors
 - [x] Test repositories
+- [ ] Improve repositories documentation
 
 - [ ] Declare services with it's methods
 - [ ] Implement services
 - [ ] Test services
+- [ ] Improve services documentation
 
 - [ ] Declare controllers with it's methods
 - [ ] Implement controllers
@@ -27,6 +29,10 @@ A simple REST Api for a forum like Reddit built in Go
 - [ ] Implement logging
 
 - [x] Dockerize
+
+# Secondary Objectives
+
+- [ ] Add registration dates for every entity
 
 # Required environment variables
 

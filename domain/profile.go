@@ -100,7 +100,7 @@ type ProfileService interface {
 		UpdatedDisplayName    string
 		UpdatedPicturePath    string
 		UpdatedBackgroundPath string
-	})
+	}) error
 
 	// Creates the relation of following between a follower and a followed
 	AddFollow(followerId uint, followedId uint) error
