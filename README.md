@@ -15,12 +15,11 @@ A simple REST Api for a forum like Reddit built in Go
 - [x] Test repositories
 - [ ] Improve repositories documentation
 
-- [ ] Declare services with it's methods
-- [ ] Implement services
+- [x] Declare service interfaces
+- [x] Implement services
 - [ ] Test services
 - [ ] Improve services documentation
 
-- [ ] Declare controllers with it's methods
 - [ ] Implement controllers
 - [ ] Test controllers
 
