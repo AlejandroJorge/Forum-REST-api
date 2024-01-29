@@ -3,11 +3,11 @@ package domain
 import "github.com/AlejandroJorge/forum-rest-api/util"
 
 type Comment struct {
-	ID      uint
-	PostID  uint
-	UserID  uint
-	Content string
-	Likes   uint
+	ID      uint   `json:"ID"`
+	PostID  uint   `json:"PostID"`
+	UserID  uint   `json:"UserID"`
+	Content string `json:"Content"`
+	Likes   uint   `json:"Likes"`
 }
 
 func (c Comment) Validate() bool {

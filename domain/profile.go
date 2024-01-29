@@ -3,13 +3,13 @@ package domain
 import "github.com/AlejandroJorge/forum-rest-api/util"
 
 type Profile struct {
-	UserID         uint
-	DisplayName    string
-	TagName        string
-	PicturePath    string
-	BackgroundPath string
-	Followers      uint
-	Follows        uint
+	UserID         uint   `json:"UserID"`
+	DisplayName    string `json:"DisplayName"`
+	TagName        string `json:"TagName"`
+	PicturePath    string `json:"PicturePath"`
+	BackgroundPath string `json:"BackgroundPath"`
+	Followers      uint   `json:"Followers"`
+	Follows        uint   `json:"Follows"`
 }
 
 func (p Profile) Validate() bool {

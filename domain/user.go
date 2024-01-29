@@ -7,14 +7,10 @@ import (
 )
 
 type User struct {
-	ID uint
-
-	// For auth
-	Email          string
-	HashedPassword string
-
-	// Meta
-	RegistrationDate time.Time
+	ID               uint      `json:"ID"`
+	Email            string    `json:"Email"`
+	HashedPassword   string    `json:"HashedPassword"`
+	RegistrationDate time.Time `json:"RegistrationDate"`
 }
 
 func (u User) Validate() bool {

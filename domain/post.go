@@ -7,13 +7,13 @@ import (
 )
 
 type Post struct {
-	PostID       uint
-	OwnerID      uint
-	Title        string
-	Description  string
-	Content      string
-	CreationDate time.Time
-	Likes        uint
+	PostID       uint      `json:"PostID"`
+	OwnerID      uint      `json:"OwnerID"`
+	Title        string    `json:"Title"`
+	Description  string    `json:"Description"`
+	Content      string    `json:"Content"`
+	CreationDate time.Time `json:"CreationDate"`
+	Likes        uint      `json:"Likes"`
 }
 
 func (p Post) Validate() bool {
