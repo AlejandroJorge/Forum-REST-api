@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -165,10 +166,10 @@ func (con profileController) Create(w http.ResponseWriter, r *http.Request) {
 		UserID         uint   `json:"UserID"`
 		DisplayName    string `json:"DisplayName"`
 		TagName        string `json:"TagName"`
-		PicturePath    string `json:"PicturePath"`
-		BackgroundPath string `json:"BackgroundPath"`
+		PicturePath    string `json:"PicturePath,omitempty"`
+		BackgroundPath string `json:"BackgroundPath,omitempty"`
 	}
-	err := util.ReadJSONRequest(r, createReq)
+	err := util.ReadJSONRequest(r, &createReq)
 	if err != nil {
 		util.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
 		return
@@ -221,10 +222,10 @@ func (con profileController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var updateReq struct {
-		TagName        string `json:"TagName"`
-		DisplayName    string `json:"DisplayName"`
-		PicturePath    string `json:"PicturePath"`
-		BackgroundPath string `json:"BackgroundPath"`
+		TagName        string `json:"TagName,omitempty"`
+		DisplayName    string `json:"DisplayName,omitempty"`
+		PicturePath    string `json:"PicturePath,omitempty"`
+		BackgroundPath string `json:"BackgroundPath,omitempty"`
 	}
 	err = util.ReadJSONRequest(r, &updateReq)
 	if err != nil {
