@@ -32,6 +32,8 @@ A simple REST Api for a forum like Reddit built in Go
 # Secondary Objectives
 
 - [ ] Add registration dates for every entity
+- [ ] Handle all errors returned
+- [ ] Update service methods
 
 # Required environment variables
 
