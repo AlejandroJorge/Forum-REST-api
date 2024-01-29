@@ -19,8 +19,8 @@ func NewUserController(serv domain.UserService) userController {
 
 func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 	var createReq struct {
-		NewEmail    string `json:"email"`
-		NewPassword string `json:"password"`
+		NewEmail    string `json:"Email"`
+		NewPassword string `json:"Password"`
 	}
 	err := util.ReadJSONRequest(r, &createReq)
 	if err != nil {
