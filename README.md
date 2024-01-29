@@ -5,35 +5,35 @@ A simple REST Api for a forum like Reddit built in Go
 # To Do
 
 - [x] Relational data modelling
-- [ ] Define functionality
 
 - [x] Create models
-- [ ] Implement validations for models
+- [x] Implement validations for models
 - [x] Declare repository interfaces
 - [x] Implement repositories for SQLite3
     - [x] Implement custom errors
 - [x] Test repositories
-- [ ] Improve repositories documentation
 
 - [x] Declare service interfaces
 - [x] Implement services
-- [ ] Test services
-- [ ] Improve services documentation
 
 - [ ] Implement controllers
-- [ ] Test controllers
 
-- [ ] Implement router
+- [x] Implement router
 - [ ] Implement auth
 - [ ] Implement logging
 
 - [x] Dockerize
 
-# Secondary Objectives
+# New Objectives
 
-- [ ] Add registration dates for every entity
-- [ ] Handle all errors returned
-- [ ] Update service methods
+- [ ] Implement error handling for all errors in all layers
+- [ ] Fix Update methods for all services
+- [ ] Log all errors that lead to a InternalServerError
+- [ ] Improve repository documentation
+- [ ] Improve service documentation
+- [ ] Test Services
+- [ ] Test Controllers
+- [ ] Reorganize util package
 
 # Required environment variables
 
