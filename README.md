@@ -2,41 +2,70 @@
 
 A simple REST Api for a forum like Reddit built in Go
 
-# To Do
+# How to run locally
 
-- [x] Relational data modelling
+This project requires go and gcc installed in your system
 
-- [x] Create models
-- [x] Implement validations for models
-- [x] Declare repository interfaces
-- [x] Implement repositories for SQLite3
-    - [x] Implement custom errors
-- [x] Test repositories
+First, clone this repository
+```bash
+git clone https://github.com/AlejandroJorge/Forum-REST-api.git
+cd Forum-REST-api
+```
 
-- [x] Declare service interfaces
-- [x] Implement services
+Then, create a .env file on project folder with the following environment variables:
+- SQLITE_DB_FOLDER_NAME
+- SQLITE_DB_FILE_NAME
+- PORT
 
-- [ ] Implement controllers
+Finally, you can simply run the makefile
+```bash
+make
+```
 
-- [x] Implement router
-- [ ] Implement auth
-- [ ] Implement logging
+# How to build docker image
 
-- [x] Dockerize
+If you prefer to run it from a Docker image, you can simply build it
+```bash
+docker build -t forum-rest-api:latest .
+```
 
-# New Objectives
+And then run it
+```bash
+docker run forum-rest-api:latest
+```
 
-- [ ] Implement error handling for all errors in all layers
-- [ ] Fix Update methods for all services
-- [ ] Log all errors that lead to a InternalServerError
-- [ ] Improve repository documentation
-- [ ] Improve service documentation
-- [ ] Test Services
-- [ ] Test Controllers
-- [ ] Reorganize util package
+# Development Roadmap
 
-# Required environment variables
+Where is development going right now
 
-* SQLITE_DB_FILE_NAME
-* SQLITE_DB_FOLDER_NAME
-* PORT
+## Basic Features
+
+- [ ] Implement last controller and routing
+- [ ] Implement auth with middleware
+- [ ] Implement logging for request-response flow
+- [ ] Deploy application
+
+## Code quality and reliability improvement
+
+- [ ] Custom errors for data / repository layer (include default error)
+- [ ] Logging for data / repository layer errors
+- [ ] Remove unnecesary transactions
+- [ ] Custom errors for domain / service layer (include default error)
+- [ ] Logging for domain / service layer errors
+- [ ] Expand update methods for services (decompress)
+- [ ] Documentation in comments for repositories (errors, optional args, etc)
+- [ ] Documentation in comments for services (errors, optional args, etc)
+- [ ] Remake tests for repositories
+- [ ] Make tests for services
+- [ ] Make tests for controllers / routes
+
+## Next features
+
+- [ ] Pagination for profiles
+- [ ] Pagination for posts
+- [ ] Pagination for comments
+- [ ] Searching for posts
+- [ ] Multiple subforums
+- [ ] Different auth levels
+- [ ] Admin dashboard
+
