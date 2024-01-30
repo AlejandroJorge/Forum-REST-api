@@ -47,13 +47,14 @@ Where is development going right now
 
 ## Basic Features
 
-- [ ] Implement logging for request-response flow
+- [x] Implement logging for request-response flow
 - [ ] Deploy application
 
 ## Code quality and reliability improvement
 
 - [ ] Custom errors for data / repository layer (include default error)
 - [ ] Logging for data / repository layer errors
+- [ ] Repository level validation
 - [ ] Remove unnecesary transactions
 - [ ] Custom errors for domain / service layer (include default error)
 - [ ] Logging for domain / service layer errors
@@ -67,6 +68,7 @@ Where is development going right now
 
 ## Next features
 
+- [ ] CORS fix
 - [ ] Pagination for profiles
 - [ ] Pagination for posts
 - [ ] Pagination for comments
