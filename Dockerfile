@@ -10,7 +10,8 @@ COPY . .
 
 RUN make build
 
-VOLUME /app/data
+# Commented since railway bans VOLUMES, if deploying on another service uncomment this
+# VOLUME /app/data
 
 EXPOSE $PORT
 
