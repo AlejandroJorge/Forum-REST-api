@@ -16,6 +16,7 @@ Then, create a .env file on project folder with the following environment variab
 - SQLITE_DB_FOLDER_NAME
 - SQLITE_DB_FILE_NAME
 - PORT
+- AUTH_SECRET
 
 ## Build natively
 
