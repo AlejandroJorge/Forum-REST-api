@@ -74,5 +74,16 @@ func initializePostRoutes(router *mux.Router) {
 }
 
 func initializeCommentRoutes(router *mux.Router) {
+	repository := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
+	service := service.NewCommentService(repository)
+	controller := controller.NewCommentController(service)
 
+	router.HandleFunc("/api/v1/comments", controller.Create).Methods("POST")
+	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.GetByID).Methods("GET")
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}/comments", controller.GetByUser).Methods("GET")
+	router.HandleFunc("/api/v1/posts/{id:[0-9]+/comments}", controller.GetByPost).Methods("GET")
+	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.Update).Methods("PUT")
+	router.HandleFunc("/api/v1/comments/likes", controller.CreateLike).Methods("POST")
+	router.HandleFunc("/api/v1/comments/likes", controller.DeleteLike).Methods("DELETE")
+	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.Delete).Methods("DELETE")
 }
