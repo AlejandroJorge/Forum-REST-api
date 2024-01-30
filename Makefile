@@ -15,7 +15,7 @@ build:
 .PHONY: test
 test:
 	make clean
-	go test -v ./...
+	go test -v ./tests/...
 
 .PHONY: clean
 clean:

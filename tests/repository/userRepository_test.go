@@ -6,6 +6,7 @@ import (
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
+	"github.com/AlejandroJorge/forum-rest-api/tests"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
@@ -21,23 +22,23 @@ func TestUserCreate(t *testing.T) {
 	for _, newUser := range newUsers {
 		email := newUser.Email
 		id, err := repo.CreateNew(newUser)
-		util.EndTestIfError(err, t)
+		tests.EndTestIfError(err, t)
 
 		retrievedUser, err := repo.GetByEmail(email)
-		util.EndTestIfError(err, t)
+		tests.EndTestIfError(err, t)
 
-		util.AssertEqu(newUser.Email, retrievedUser.Email, t)
-		util.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
+		tests.AssertEqu(newUser.Email, retrievedUser.Email, t)
+		tests.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
 
 		retrievedUser, err = repo.GetByID(id)
-		util.EndTestIfError(err, t)
+		tests.EndTestIfError(err, t)
 
-		util.AssertEqu(newUser.Email, retrievedUser.Email, t)
-		util.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
+		tests.AssertEqu(newUser.Email, retrievedUser.Email, t)
+		tests.AssertEqu(newUser.HashedPassword, retrievedUser.HashedPassword, t)
 	}
 
 	_, err := repo.GetByEmail("unexistentemail@gmail.com")
-	util.AssertEqu(util.ErrEmptySelection, err, t)
+	tests.AssertEqu(util.ErrEmptySelection, err, t)
 }
 
 func TestUserCreateDuplicated(t *testing.T) {
@@ -46,10 +47,10 @@ func TestUserCreateDuplicated(t *testing.T) {
 	newUser := domain.User{Email: "sameemail@gmail.com", HashedPassword: "A1S5DA1"}
 
 	_, err := repo.CreateNew(newUser)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	_, err = repo.CreateNew(newUser)
-	util.AssertEqu(util.ErrRepeatedEntity, err, t)
+	tests.AssertEqu(util.ErrRepeatedEntity, err, t)
 }
 
 func TestUserUpdate(t *testing.T) {
@@ -58,25 +59,25 @@ func TestUserUpdate(t *testing.T) {
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 
 	id, err := repo.CreateNew(newUser)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	updatedEmail := "mysecondemail@gmail.com"
 	err = repo.UpdateEmail(id, updatedEmail)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	retrievedUser, err := repo.GetByID(id)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
-	util.AssertEqu(updatedEmail, retrievedUser.Email, t)
+	tests.AssertEqu(updatedEmail, retrievedUser.Email, t)
 
 	updatedHashedPassword := "AS1D56AS1D65AS1D"
 	err = repo.UpdateHashedPassword(id, updatedHashedPassword)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	retrievedUser, err = repo.GetByID(id)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
-	util.AssertEqu(updatedHashedPassword, retrievedUser.HashedPassword, t)
+	tests.AssertEqu(updatedHashedPassword, retrievedUser.HashedPassword, t)
 }
 
 func TestUserDelete(t *testing.T) {
@@ -85,11 +86,11 @@ func TestUserDelete(t *testing.T) {
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 
 	id, err := repo.CreateNew(newUser)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	err = repo.Delete(id)
-	util.EndTestIfError(err, t)
+	tests.EndTestIfError(err, t)
 
 	_, err = repo.GetByID(id)
-	util.AssertEqu(util.ErrEmptySelection, err, t)
+	tests.AssertEqu(util.ErrEmptySelection, err, t)
 }
