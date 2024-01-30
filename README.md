@@ -52,7 +52,7 @@ Where is development going right now
 - [x] Check exported functions / types / constants
 - [ ] Custom errors for data / repository layer (include default error)
 - [ ] Logging for data / repository layer errors
-- [ ] Repository level validation
+- [ ] Repository level validation for tests
 - [ ] Remove unnecesary transactions
 - [ ] Custom errors for domain / service layer (include default error)
 - [ ] Logging for domain / service layer errors
