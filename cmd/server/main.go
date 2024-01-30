@@ -12,10 +12,10 @@ import (
 func main() {
 	config.Initialize()
 
-	port := os.Getenv("PORT")
-	if port == "" {
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
 		port = "8080"
 	}
-	fmt.Printf("Listening on http://localhost:%s", os.Getenv("PORT"))
-	http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), router.AppRouter())
+	fmt.Printf("Listening on http://localhost:%s", port)
+	http.ListenAndServe(fmt.Sprintf(":%s", port), router.AppRouter())
 }

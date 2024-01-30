@@ -16,12 +16,12 @@ func SQLiteDatabase() *sql.DB {
 	if sqliteDB == nil {
 		currentDir := GetWorkingDir()
 
-		folderName := os.Getenv("SQLITE_DB_FOLDER_NAME")
-		if folderName == "" {
+		folderName, ok := os.LookupEnv("SQLITE_DB_FOLDER_NAME")
+		if !ok {
 			folderName = "data"
 		}
-		fileName := os.Getenv("SQLITE_DB_FILE_NAME")
-		if fileName == "" {
+		fileName, ok := os.LookupEnv("SQLITE_DB_FILE_NAME")
+		if !ok {
 			fileName = "database.sqlite"
 		}
 
