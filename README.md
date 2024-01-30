@@ -17,19 +17,26 @@ Then, create a .env file on project folder with the following environment variab
 - SQLITE_DB_FILE_NAME
 - PORT
 
-Finally, you can simply run the makefile
+## Build natively
+
+This will build and test the project
 ```bash
 make
 ```
 
-# How to build docker image
+To run it then simply:
+```bash
+./build/server
+```
 
-If you prefer to run it from a Docker image, you can simply build it
+## Build docker image
+
+This will build the docker image
 ```bash
 docker build -t forum-rest-api:latest .
 ```
 
-And then run it
+To run it then simply:
 ```bash
 docker run forum-rest-api:latest
 ```
