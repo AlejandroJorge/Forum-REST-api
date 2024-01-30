@@ -47,7 +47,8 @@ Where is development going right now
 
 ## Code quality and reliability improvement
 
-- [ ] Reorganize testing
+- [x] Reorganize testing
+- [x] Check exported functions / types / constants
 - [ ] Custom errors for data / repository layer (include default error)
 - [ ] Logging for data / repository layer errors
 - [ ] Repository level validation
