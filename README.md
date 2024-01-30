@@ -45,13 +45,9 @@ docker run forum-rest-api:latest
 
 Where is development going right now
 
-## Basic Features
-
-- [x] Implement logging for request-response flow
-- [ ] Deploy application
-
 ## Code quality and reliability improvement
 
+- [ ] Reorganize testing
 - [ ] Custom errors for data / repository layer (include default error)
 - [ ] Logging for data / repository layer errors
 - [ ] Repository level validation
@@ -68,6 +64,7 @@ Where is development going right now
 
 ## Next features
 
+- [ ] Auth expiration
 - [ ] CORS fix
 - [ ] Pagination for profiles
 - [ ] Pagination for posts

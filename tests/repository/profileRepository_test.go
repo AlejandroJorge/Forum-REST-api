@@ -5,12 +5,13 @@ import (
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 func TestProfileCreateWithSameID(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "someemail@gmail.com", HashedPassword: "A5S1D6"},
@@ -25,15 +26,15 @@ func TestProfileCreateWithSameID(t *testing.T) {
 }
 
 func TestProfileCreateWithNullID(t *testing.T) {
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	_, err := profileRepo.CreateNew(domain.Profile{UserID: 0, DisplayName: "NullUser", TagName: "nullone"})
 	util.AssertEqu(util.ErrNoCorrespondingUser, err, t)
 }
 
 func TestProfileCreateWithSameTagName(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	idFirst, err := userRepo.CreateNew(domain.User{
 		Email: "a1s86d5a1sd@gmail.com", HashedPassword: "A5S1D6"},
@@ -57,8 +58,8 @@ func TestProfileCreateWithSameTagName(t *testing.T) {
 }
 
 func TestProfileUpdateDisplayName(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "randomemail@gmail.com", HashedPassword: "A5W4da15S361AD56WD1"},
@@ -106,8 +107,8 @@ func TestProfileUpdateDisplayName(t *testing.T) {
 }
 
 func TestProfileDelete(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	id, err := userRepo.CreateNew(domain.User{
 		Email: "fordeleting@gmail.com", HashedPassword: "A5W4da15S361"},
@@ -125,8 +126,8 @@ func TestProfileDelete(t *testing.T) {
 }
 
 func TestProfileAddDeleteFollowers(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	firstID, err := userRepo.CreateNew(domain.User{
 		Email: "followed@somemail.com", HashedPassword: "A5W4da15S361"},
@@ -171,8 +172,8 @@ func TestProfileAddDeleteFollowers(t *testing.T) {
 }
 
 func TestProfileGetFollowingsAndFollows(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 
 	firstID, err := userRepo.CreateNew(domain.User{
 		Email: "followed@followed.com", HashedPassword: "A5W4da15S361"},

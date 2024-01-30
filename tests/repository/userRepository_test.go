@@ -5,11 +5,12 @@ import (
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 func TestUserCreate(t *testing.T) {
-	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	repo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUsers := []domain.User{
 		{Email: "asdasda@gmail.com", HashedPassword: "1AS56D1AS6D51ASD6"},
@@ -40,7 +41,7 @@ func TestUserCreate(t *testing.T) {
 }
 
 func TestUserCreateDuplicated(t *testing.T) {
-	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	repo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "sameemail@gmail.com", HashedPassword: "A1S5DA1"}
 
@@ -52,7 +53,7 @@ func TestUserCreateDuplicated(t *testing.T) {
 }
 
 func TestUserUpdate(t *testing.T) {
-	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	repo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 
@@ -79,7 +80,7 @@ func TestUserUpdate(t *testing.T) {
 }
 
 func TestUserDelete(t *testing.T) {
-	repo := NewSQLiteUserRepository(config.SQLiteDatabase())
+	repo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
 
 	newUser := domain.User{Email: "myfirstemail@gmail.com", HashedPassword: "ASD51A6S165ASD"}
 

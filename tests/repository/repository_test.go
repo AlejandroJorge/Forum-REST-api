@@ -18,6 +18,6 @@ func TestMain(t *testing.M) {
 func fixWorkingDir() {
 	currentDir, err := os.Getwd()
 	util.PanicIfError(err)
-	workingDir := path.Dir(currentDir)
+	workingDir := path.Dir(path.Dir(currentDir))
 	util.SetWorkingDir(workingDir)
 }

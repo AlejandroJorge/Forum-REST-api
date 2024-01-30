@@ -5,20 +5,21 @@ import (
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 func TestCommentCreateWithNoPostNoUser(t *testing.T) {
-	commentRepo := NewSQLiteCommentRepository(config.SQLiteDatabase())
+	commentRepo := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 	_, err := commentRepo.CreateNew(domain.Comment{UserID: 0, PostID: 0, Content: "Something"})
 	util.AssertEqu(util.ErrNoCorrespondingProfileOrPost, err, t)
 }
 
 func TestCommentGetMultiple(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
-	commentRepo := NewSQLiteCommentRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
+	commentRepo := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "A15SD61@commentrepo.com", HashedPassword: "5A6SD1",
@@ -72,10 +73,10 @@ func TestCommentGetMultiple(t *testing.T) {
 }
 
 func TestCommentLikes(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
-	commentRepo := NewSQLiteCommentRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
+	commentRepo := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "5A1S561@commentrepo.com", HashedPassword: "5A6SD1",
@@ -114,10 +115,10 @@ func TestCommentLikes(t *testing.T) {
 }
 
 func TestCommentUpdate(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
-	commentRepo := NewSQLiteCommentRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
+	commentRepo := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "84s45@commentrepo.com", HashedPassword: "5A6SD1",
@@ -149,10 +150,10 @@ func TestCommentUpdate(t *testing.T) {
 }
 
 func TestCommentDelete(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
-	commentRepo := NewSQLiteCommentRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
+	commentRepo := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "a68s4d86as4d@commentrepo.com", HashedPassword: "5A6SD1",

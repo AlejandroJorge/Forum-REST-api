@@ -6,13 +6,14 @@ import (
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 func TestPostCreateAndRead(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "adsasas@asdasd.com", HashedPassword: "1dw8a15s",
@@ -40,8 +41,8 @@ func TestPostCreateAndRead(t *testing.T) {
 }
 
 func TestPostCreateForNoProfile(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "1a56sd1a6sd1@unexistent.com", HashedPassword: "1dw8a15s",
@@ -55,9 +56,9 @@ func TestPostCreateForNoProfile(t *testing.T) {
 }
 
 func TestPostGetMultiplePosts(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "9aw8d45as41d98@a.com", HashedPassword: "1dw8a15s",
@@ -106,7 +107,7 @@ func TestPostGetMultiplePosts(t *testing.T) {
 }
 
 func TestPostGetPopularAfterFuture(t *testing.T) {
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	retrievedPosts, err := postRepo.GetPopularAfter(time.Now().Add(time.Minute), 10)
 	util.AssertEqu(util.ErrEmptySelection, err, t)
@@ -114,9 +115,9 @@ func TestPostGetPopularAfterFuture(t *testing.T) {
 }
 
 func TestPostUpdate(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "A84S8D6416@asdasd.com", HashedPassword: "8796A5S41D536A4D",
@@ -163,9 +164,9 @@ func TestPostUpdate(t *testing.T) {
 }
 
 func TestPostDelete(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "random@email4654.com", HashedPassword: "8796A5S41D536A4D",
@@ -191,9 +192,9 @@ func TestPostDelete(t *testing.T) {
 }
 
 func TestPostLikes(t *testing.T) {
-	userRepo := NewSQLiteUserRepository(config.SQLiteDatabase())
-	profileRepo := NewSQLiteProfileRepository(config.SQLiteDatabase())
-	postRepo := NewSQLitePostRepository(config.SQLiteDatabase())
+	userRepo := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+	profileRepo := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+	postRepo := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 
 	userID, err := userRepo.CreateNew(domain.User{
 		Email: "raskld@54a.com", HashedPassword: "8796A5S41D",
