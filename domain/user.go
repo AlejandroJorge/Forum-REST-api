@@ -19,50 +19,36 @@ func (u User) Validate() bool {
 		u.Email != "",
 		u.HashedPassword != "",
 		!u.RegistrationDate.IsZero(),
+		util.IsEmailFormat(u.Email),
 	}
 
 	return util.MergeAND(conditions)
 }
 
 type UserRepository interface {
-	// Returns the user corresponding to the provided ID
-	GetByID(id uint) (User, error)
+	Create(email, hashedPassword string) (uint, error)
 
-	// Returns the user corresponding to the provided Email
-	GetByEmail(email string) (User, error)
+	Delete(id uint) error
 
-	// Creates a new user, the id and registrationDate in the model are ignored
-	CreateNew(user User) (uint, error)
-
-	// Updates the email of the user corresponding to the provided ID
 	UpdateEmail(id uint, newEmail string) error
 
-	// Updates the password of the user corresponding to the provided ID. The password must be previously hashed
-	UpdateHashedPassword(id uint, newHashedEmail string) error
+	UpdateHashedPassword(id uint, newHashedPassword string) error
 
-	// Deletes the user corresponding to the provided ID
-	Delete(id uint) error
+	GetByID(id uint) (User, error)
+
+	GetByEmail(email string) (User, error)
 }
 
 type UserService interface {
-	// Retrieves a user by the id provided
+	Create(email, password string) (uint, error)
+
+	Delete(id uint) error
+
+	UpdateEmail(id uint, email string) error
+
+	UpdatePassword(id uint, password string) error
+
 	GetByID(id uint) (User, error)
 
-	// Retrieves a user by the email provided
 	GetByEmail(email string) (User, error)
-
-	// Creates a new user with the info provided
-	CreateNew(createInfo struct {
-		NewEmail    string
-		NewPassword string
-	}) (uint, error)
-
-	// Updates the authentication info of the user with corresponding id
-	Update(id uint, updateInfo struct {
-		UpdatedEmail    string
-		UpdatedPassword string
-	}) error
-
-	// Deletes the user with the provided id
-	Delete(id uint) error
 }

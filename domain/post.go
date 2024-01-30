@@ -30,42 +30,40 @@ func (p Post) Validate() bool {
 }
 
 type PostRepository interface {
-	// Returns the post corresponding to the provided id
-	GetByID(id uint) (Post, error)
+	CreateNew(ownerID uint, title, description, content string) (uint, error)
 
-	// Returns the posts corresponding to the provided userID, they're sorted by likes
-	GetByUser(userId uint) ([]Post, error)
+	Delete(id uint) error
 
-	// Returns an amount of posts that occured after certain moment, they're sorted by likes
-	GetPopularAfter(moment time.Time, amount uint) ([]Post, error)
-
-	// Creates a new user, the id in the model is ignored
-	CreateNew(post Post) (uint, error)
-
-	// Updates the title of the post corresponding to the provided id
 	UpdateTitle(id uint, newTitle string) error
 
-	// Updates the description of the post corresponding to the provided id
 	UpdateDescription(id uint, newDescription string) error
 
-	// Updates the content of the post corresponding to the provided id
 	UpdateContent(id uint, newContent string) error
 
-	// Creates the relation of liking between a profile and a post
+	GetByID(id uint) (Post, error)
+
+	GetByUser(userId uint) ([]Post, error)
+
+	GetPopularAfter(moment time.Time, amount uint) ([]Post, error)
+
 	AddLike(userId uint, postId uint) error
 
-	// Deletes the relation of liking between a profile and a post
 	DeleteLike(userId uint, postId uint) error
-
-	// Deletes the post corresponding to the provided ID
-	Delete(id uint) error
 }
 
 type PostService interface {
-	// Returns the post corresponding to the provided id
+	Create(ownerID uint, title, description, content string) (uint, error)
+
+	Delete(id uint) error
+
+	UpdateTitle(id uint, title string) error
+
+	UpdateDescription(id uint, description string) error
+
+	UpdateContent(id uint, content string) error
+
 	GetByID(id uint) (Post, error)
 
-	// Returns the posts corresponding to the provided userID, they're sorted by likes
 	GetByUser(userId uint) ([]Post, error)
 
 	GetPopularToday() ([]Post, error)
@@ -76,27 +74,7 @@ type PostService interface {
 
 	GetPopularAllTime() ([]Post, error)
 
-	// Creates a new user, the id in the model is ignored
-	CreateNew(createInfo struct {
-		OwnerID     uint
-		Title       string
-		Description string
-		Content     string
-	}) (uint, error)
-
-	//
-	Update(id uint, updateInfo struct {
-		UpdatedTitle       string
-		UpdatedDescription string
-		UpdatedContent     string
-	}) error
-
-	// Creates the relation of liking between a profile and a post
 	AddLike(userId uint, postId uint) error
 
-	// Deletes the relation of liking between a profile and a post
 	DeleteLike(userId uint, postId uint) error
-
-	// Deletes the post corresponding to the provided ID
-	Delete(id uint) error
 }
