@@ -47,8 +47,6 @@ Where is development going right now
 
 ## Basic Features
 
-- [ ] Implement last controller and routing
-- [ ] Implement auth with middleware
 - [ ] Implement logging for request-response flow
 - [ ] Deploy application
 

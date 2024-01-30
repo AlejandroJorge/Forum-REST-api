@@ -5,6 +5,7 @@ import (
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery/controller"
+	"github.com/AlejandroJorge/forum-rest-api/delivery/middleware"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/service"
 	"github.com/gorilla/mux"
@@ -34,10 +35,20 @@ func initializeUserRoutes(router *mux.Router) {
 	service := service.NewUserService(repository)
 	controller := controller.NewUserController(service)
 
-	router.HandleFunc("/api/v1/users", controller.Create).Methods("POST")
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Get).Methods("GET")
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Update).Methods("PUT")
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}", controller.Delete).Methods("DELETE")
+	router.HandleFunc("/api/v1/users",
+		controller.Create).Methods("POST")
+
+	router.HandleFunc("/api/v1/users/login",
+		controller.Login).Methods("POST")
+
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
+		middleware.Auth(controller.Get)).Methods("GET")
+
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
+		middleware.Auth(controller.Update)).Methods("PUT")
+
+	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
+		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
 
 func initializeProfileRoutes(router *mux.Router) {

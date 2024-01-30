@@ -1,12 +1,17 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userController struct {
@@ -56,6 +61,57 @@ func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 		ID uint `json:"ID"`
 	}{ID: id}
 	util.WriteJSONResponse(w, http.StatusCreated, response)
+}
+
+func (con userController) Login(w http.ResponseWriter, r *http.Request) {
+	var loginReq struct {
+		Email    string `json:"Email"`
+		Password string `json:"Password"`
+	}
+	err := util.ReadJSONRequest(r, &loginReq)
+	if err != nil {
+		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	user, err := con.serv.GetByEmail(loginReq.Email)
+	if err == util.ErrEmptySelection {
+		util.WriteResponse(w, http.StatusNotFound, "There's no user with that credentials")
+		return
+	}
+	if err != nil {
+		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve user information")
+		fmt.Println(err)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(loginReq.Password))
+	if err != nil {
+		util.WriteResponse(w, http.StatusBadRequest, "Incorrect password")
+		return
+	}
+
+	expireDate := time.Now().Add(time.Minute * 10)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss": user.ID,
+		"exp": expireDate.Unix(),
+	})
+
+	tokenStr, err := token.SignedString([]byte(os.Getenv("AUTH_SECRET")))
+	if err != nil {
+		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't sign token")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwtToken",
+		Value:    tokenStr,
+		Expires:  expireDate,
+		HttpOnly: true,
+		Secure:   true,
+	})
+
+	util.WriteResponse(w, http.StatusOK, "Authenticated correctly")
 }
 
 func (con userController) Get(w http.ResponseWriter, r *http.Request) {
