@@ -17,7 +17,13 @@ func SQLiteDatabase() *sql.DB {
 		currentDir := GetWorkingDir()
 
 		folderName := os.Getenv("SQLITE_DB_FOLDER_NAME")
+		if folderName == "" {
+			folderName = "data"
+		}
 		fileName := os.Getenv("SQLITE_DB_FILE_NAME")
+		if fileName == "" {
+			fileName = "database.sqlite"
+		}
 
 		folderPath := path.Join(currentDir, folderName)
 		err := os.Mkdir(folderPath, 0755)

@@ -12,6 +12,10 @@ import (
 func main() {
 	config.Initialize()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	fmt.Printf("Listening on http://localhost:%s", os.Getenv("PORT"))
 	http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), router.AppRouter())
 }
