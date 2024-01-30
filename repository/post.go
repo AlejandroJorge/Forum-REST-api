@@ -14,21 +14,13 @@ type sqlitePostRepository struct {
 }
 
 func (repo sqlitePostRepository) AddLike(userId uint, postId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	INSERT INTO Post_Likings(Liker_ID, Post_ID)
 	VALUES (?,?)
 	`
-	_, err = tx.Exec(query, userId, postId)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, userId, postId)
 	if err != nil {
 		return err
 	}
@@ -37,22 +29,13 @@ func (repo sqlitePostRepository) AddLike(userId uint, postId uint) error {
 }
 
 func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	DELETE FROM Post_Likings
 	WHERE Liker_ID = ? AND Post_ID = ?
 	`
-	_, err = tx.Exec(query, userId, postId)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, userId, postId)
 	if err != nil {
 		return err
 	}
@@ -61,33 +44,23 @@ func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
 }
 
 func (repo sqlitePostRepository) CreateNew(post domain.Post) (uint, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return 0, err
-	}
+	db := repo.db
 
 	query := `
   INSERT INTO Post(Title, Description, Content, Creation_Date, Owner_ID)
   VALUES (?,?,?,?,?)
   `
-	res, err := tx.Exec(query, post.Title, post.Description, post.Content, time.Now().Unix(), post.OwnerID)
+	res, err := db.Exec(query, post.Title, post.Description, post.Content, time.Now().Unix(), post.OwnerID)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			err = util.ErrNoCorrespondingProfile
 		}
 	}
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 
 	newId, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return 0, err
 	}
@@ -96,22 +69,13 @@ func (repo sqlitePostRepository) CreateNew(post domain.Post) (uint, error) {
 }
 
 func (repo sqlitePostRepository) Delete(id uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	DELETE FROM Post
 	WHERE Post_ID = ?
 	`
-	_, err = tx.Exec(query, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -120,10 +84,7 @@ func (repo sqlitePostRepository) Delete(id uint) error {
 }
 
 func (repo sqlitePostRepository) GetByID(id uint) (domain.Post, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return domain.Post{}, err
-	}
+	db := repo.db
 
 	var post domain.Post
 	var creationDate int64
@@ -134,30 +95,21 @@ func (repo sqlitePostRepository) GetByID(id uint) (domain.Post, error) {
 	WHERE p.Post_ID = ?
 	GROUP BY p.Post_ID
 	`
-	row := tx.QueryRow(query, id)
-	err = row.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
+	row := db.QueryRow(query, id)
+	err := row.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = util.ErrEmptySelection
 		}
-		tx.Rollback()
 		return domain.Post{}, err
 	}
 	post.CreationDate = time.Unix(creationDate, 0)
-
-	err = tx.Commit()
-	if err != nil {
-		return domain.Post{}, err
-	}
 
 	return post, nil
 }
 
 func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Post
 	query := `
@@ -167,9 +119,8 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 	WHERE p.Owner_ID = ?
 	GROUP BY p.Post_ID
 	`
-	rows, err := tx.Query(query, userId)
+	rows, err := db.Query(query, userId)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -182,7 +133,6 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 			if err == sql.ErrNoRows {
 				err = util.ErrEmptySelection
 			}
-			tx.Rollback()
 			return nil, err
 		}
 
@@ -190,19 +140,11 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 		posts = append(posts, post)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
 	return posts, nil
 }
 
 func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) ([]domain.Post, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Post
 	momentInteger := moment.Unix()
@@ -215,9 +157,8 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 	ORDER BY Like_Count DESC
 	LIMIT ?
 	`
-	rows, err := tx.Query(query, momentInteger, amount)
+	rows, err := db.Query(query, momentInteger, amount)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -226,17 +167,11 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 		var creationDate int64
 		err = rows.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		post.CreationDate = time.Unix(creationDate, 0)
 		posts = append(posts, post)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(posts) == 0 {
@@ -247,23 +182,14 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 }
 
 func (repo sqlitePostRepository) UpdateContent(id uint, newContent string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	UPDATE Post
 	SET	Content = ?
 	WHERE Post_ID = ?
 	`
-	_, err = tx.Exec(query, newContent, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newContent, id)
 	if err != nil {
 		return err
 	}
@@ -272,23 +198,14 @@ func (repo sqlitePostRepository) UpdateContent(id uint, newContent string) error
 }
 
 func (repo sqlitePostRepository) UpdateDescription(id uint, newDescription string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	UPDATE Post
 	SET	Description = ?
 	WHERE Post_ID = ?
 	`
-	_, err = tx.Exec(query, newDescription, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newDescription, id)
 	if err != nil {
 		return err
 	}
@@ -297,23 +214,14 @@ func (repo sqlitePostRepository) UpdateDescription(id uint, newDescription strin
 }
 
 func (repo sqlitePostRepository) UpdateTitle(id uint, newTitle string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	UPDATE Post
 	SET	Title = ?
 	WHERE Post_ID = ?
 	`
-	_, err = tx.Exec(query, newTitle, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newTitle, id)
 	if err != nil {
 		return err
 	}

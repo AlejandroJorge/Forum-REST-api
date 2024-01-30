@@ -15,34 +15,23 @@ type sqliteUserRepository struct {
 }
 
 func (repo sqliteUserRepository) CreateNew(user domain.User) (uint, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return 0, err
-	}
+	db := repo.db
 
 	query := `
   INSERT INTO User(Email, Hashed_Password, Registration_Date)
   VALUES (?,?,?)
   `
-	res, err := tx.Exec(query, user.Email, user.HashedPassword, time.Now().Unix())
+	res, err := db.Exec(query, user.Email, user.HashedPassword, time.Now().Unix())
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.Code == sqlite3.ErrConstraint {
-			tx.Rollback()
 			return 0, util.ErrRepeatedEntity
 		}
 	}
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 
 	newId, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return 0, err
 	}
@@ -51,22 +40,13 @@ func (repo sqliteUserRepository) CreateNew(user domain.User) (uint, error) {
 }
 
 func (repo sqliteUserRepository) Delete(id uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   DELETE FROM User
   WHERE User_ID = ?
   `
-	_, err = tx.Exec(query, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -75,6 +55,8 @@ func (repo sqliteUserRepository) Delete(id uint) error {
 }
 
 func (repo sqliteUserRepository) GetByEmail(email string) (domain.User, error) {
+	db := repo.db
+
 	var user domain.User
 	var unixSeconds int64
 	query := `
@@ -82,7 +64,7 @@ func (repo sqliteUserRepository) GetByEmail(email string) (domain.User, error) {
   FROM User
   WHERE Email = ?
   `
-	row := repo.db.QueryRow(query, email)
+	row := db.QueryRow(query, email)
 	err := row.Scan(&user.ID, &user.Email, &user.HashedPassword, &unixSeconds)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -96,6 +78,8 @@ func (repo sqliteUserRepository) GetByEmail(email string) (domain.User, error) {
 }
 
 func (repo sqliteUserRepository) GetByID(id uint) (domain.User, error) {
+	db := repo.db
+
 	var user domain.User
 	var unixSeconds int64
 	query := `
@@ -103,7 +87,7 @@ func (repo sqliteUserRepository) GetByID(id uint) (domain.User, error) {
   FROM User
   WHERE User_ID = ?
   `
-	row := repo.db.QueryRow(query, id)
+	row := db.QueryRow(query, id)
 	err := row.Scan(&user.ID, &user.Email, &user.HashedPassword, &unixSeconds)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -117,23 +101,14 @@ func (repo sqliteUserRepository) GetByID(id uint) (domain.User, error) {
 }
 
 func (repo sqliteUserRepository) UpdateEmail(id uint, newEmail string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE User
   SET Email = ?
   WHERE User_ID = ?
   `
-	_, err = tx.Exec(query, newEmail, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newEmail, id)
 	if err != nil {
 		return err
 	}
@@ -142,23 +117,14 @@ func (repo sqliteUserRepository) UpdateEmail(id uint, newEmail string) error {
 }
 
 func (repo sqliteUserRepository) UpdateHashedPassword(id uint, newHashedPassword string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE User
   SET Hashed_Password = ?
   WHERE User_ID = ?
   `
-	_, err = tx.Exec(query, newHashedPassword, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newHashedPassword, id)
 	if err != nil {
 		return err
 	}

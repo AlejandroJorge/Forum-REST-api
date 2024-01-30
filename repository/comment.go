@@ -13,27 +13,18 @@ type sqliteCommentRepository struct {
 }
 
 func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	INSERT INTO Comment_Likings(Liker_ID, Comment_ID)
 	VALUES (?,?)
 	`
-	_, err = tx.Exec(query, userId, commentId)
+	_, err := db.Exec(query, userId, commentId)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			err = util.ErrNoCorrespondingProfileOrComment
 		}
 	}
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -42,33 +33,23 @@ func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
 }
 
 func (repo sqliteCommentRepository) CreateNew(comment domain.Comment) (uint, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return 0, err
-	}
+	db := repo.db
 
 	query := `
 	INSERT INTO Comment(Post_ID, User_ID, Content)
 	VALUES (?,?,?)
 	`
-	res, err := tx.Exec(query, comment.PostID, comment.UserID, comment.Content)
+	res, err := db.Exec(query, comment.PostID, comment.UserID, comment.Content)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			err = util.ErrNoCorrespondingProfileOrPost
 		}
 	}
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 
 	id, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return 0, err
 	}
@@ -77,22 +58,13 @@ func (repo sqliteCommentRepository) CreateNew(comment domain.Comment) (uint, err
 }
 
 func (repo sqliteCommentRepository) Delete(id uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	DELETE FROM Comment
 	WHERE Comment_ID = ?
 	`
-	_, err = tx.Exec(query, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -101,27 +73,18 @@ func (repo sqliteCommentRepository) Delete(id uint) error {
 }
 
 func (repo sqliteCommentRepository) DeleteLike(userId uint, commentId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	DELETE FROM Comment_Likings
 	WHERE Liker_ID = ? AND Comment_ID = ?
 	`
-	_, err = tx.Exec(query, userId, commentId)
+	_, err := db.Exec(query, userId, commentId)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			err = util.ErrNoCorrespondingProfileOrComment
 		}
 	}
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -130,10 +93,7 @@ func (repo sqliteCommentRepository) DeleteLike(userId uint, commentId uint) erro
 }
 
 func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return domain.Comment{}, err
-	}
+	db := repo.db
 
 	var comment domain.Comment
 	query := `
@@ -143,18 +103,12 @@ func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
 	WHERE c.Comment_ID = ?
 	GROUP BY c.Comment_ID
 	`
-	row := tx.QueryRow(query, id)
-	err = row.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
+	row := db.QueryRow(query, id)
+	err := row.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = util.ErrEmptySelection
 		}
-		tx.Rollback()
-		return domain.Comment{}, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
 		return domain.Comment{}, err
 	}
 
@@ -162,10 +116,7 @@ func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
 }
 
 func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var comments []domain.Comment
 	query := `
@@ -177,9 +128,8 @@ func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, er
 	)
 	GROUP BY c.Comment_ID
 	`
-	rows, err := tx.Query(query, postID)
+	rows, err := db.Query(query, postID)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -187,16 +137,10 @@ func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, er
 		var comment domain.Comment
 		err = rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		comments = append(comments, comment)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(comments) == 0 {
@@ -207,10 +151,7 @@ func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, er
 }
 
 func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var comments []domain.Comment
 	query := `
@@ -222,9 +163,8 @@ func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, er
 	)
 	GROUP BY c.Comment_ID
 	`
-	rows, err := tx.Query(query, userID)
+	rows, err := db.Query(query, userID)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -232,16 +172,10 @@ func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, er
 		var comment domain.Comment
 		err = rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		comments = append(comments, comment)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(comments) == 0 {
@@ -252,23 +186,14 @@ func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, er
 }
 
 func (repo sqliteCommentRepository) UpdateContent(id uint, newContent string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	UPDATE Comment
 	SET Content = ?
 	WHERE Comment_ID = ?
 	`
-	_, err = tx.Exec(query, newContent, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newContent, id)
 	if err != nil {
 		return err
 	}

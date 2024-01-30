@@ -14,22 +14,13 @@ type sqliteProfileRepository struct {
 }
 
 func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	INSERT INTO Following(Follower_ID,Followed_ID,Following_Date)
 	VALUES (?,?,?)
 	`
-	_, err = tx.Exec(query, followerId, followedId, time.Now().Unix())
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, followerId, followedId, time.Now().Unix())
 	if err != nil {
 		return err
 	}
@@ -38,22 +29,13 @@ func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) 
 }
 
 func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
 	DELETE FROM Following
 	WHERE Follower_ID = ? AND Followed_ID = ?
 	`
-	_, err = tx.Exec(query, followerId, followedId)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, followerId, followedId)
 	if err != nil {
 		return err
 	}
@@ -62,10 +44,7 @@ func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uin
 }
 
 func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Profile, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Profile
 	query := `
@@ -78,9 +57,8 @@ func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Prof
 	)
 	GROUP BY p.User_ID
 	`
-	rows, err := tx.Query(query, userId)
+	rows, err := db.Query(query, userId)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -88,16 +66,10 @@ func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Prof
 		var post domain.Profile
 		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		posts = append(posts, post)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(posts) == 0 {
@@ -108,10 +80,7 @@ func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Prof
 }
 
 func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Profile
 	query := `
@@ -125,9 +94,8 @@ func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]dom
 	)
 	GROUP BY p.User_ID
 	`
-	rows, err := tx.Query(query, tagName)
+	rows, err := db.Query(query, tagName)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -135,16 +103,10 @@ func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]dom
 		var post domain.Profile
 		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		posts = append(posts, post)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(posts) == 0 {
@@ -155,10 +117,7 @@ func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]dom
 }
 
 func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profile, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Profile
 	query := `
@@ -171,9 +130,8 @@ func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profil
 	)
 	GROUP BY p.User_ID
 	`
-	rows, err := tx.Query(query, userId)
+	rows, err := db.Query(query, userId)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -181,16 +139,10 @@ func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profil
 		var post domain.Profile
 		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		posts = append(posts, post)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(posts) == 0 {
@@ -201,10 +153,7 @@ func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profil
 }
 
 func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return nil, err
-	}
+	db := repo.db
 
 	var posts []domain.Profile
 	query := `
@@ -218,9 +167,8 @@ func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domai
 	)
 	GROUP BY p.User_ID
 	`
-	rows, err := tx.Query(query, tagName)
+	rows, err := db.Query(query, tagName)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -228,16 +176,10 @@ func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domai
 		var post domain.Profile
 		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		posts = append(posts, post)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	if len(posts) == 0 {
@@ -248,16 +190,13 @@ func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domai
 }
 
 func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, error) {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return 0, err
-	}
+	db := repo.db
 
 	query := `
   INSERT INTO Profile(User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path)
   VALUES (?,?,?,?,?)
   `
-	res, err := tx.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
+	res, err := db.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
 			err = util.ErrRepeatedEntity
@@ -270,17 +209,10 @@ func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, err
 		}
 	}
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 
 	newId, err := res.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return 0, err
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return 0, err
 	}
@@ -289,22 +221,13 @@ func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, err
 }
 
 func (repo sqliteProfileRepository) Delete(id uint) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   DELETE FROM Profile 
   WHERE User_ID = ?
   `
-	_, err = tx.Exec(query, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -313,6 +236,8 @@ func (repo sqliteProfileRepository) Delete(id uint) error {
 }
 
 func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile, error) {
+	db := repo.db
+
 	var profile domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
@@ -322,7 +247,7 @@ func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile
   WHERE p.Tag_Name = ?
 	GROUP BY p.User_ID
   `
-	row := repo.db.QueryRow(query, tagName)
+	row := db.QueryRow(query, tagName)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -335,6 +260,8 @@ func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile
 }
 
 func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, error) {
+	db := repo.db
+
 	var profile domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
@@ -344,7 +271,7 @@ func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, er
   WHERE p.User_ID = ?
 	GROUP BY p.User_ID
   `
-	row := repo.db.QueryRow(query, userId)
+	row := db.QueryRow(query, userId)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -357,23 +284,14 @@ func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, er
 }
 
 func (repo sqliteProfileRepository) UpdateBackgroundPath(id uint, newBackgroundPath string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE Profile
 	SET Background_Path = ?
 	WHERE User_ID = ?
 	`
-	_, err = tx.Exec(query, newBackgroundPath, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newBackgroundPath, id)
 	if err != nil {
 		return err
 	}
@@ -382,23 +300,14 @@ func (repo sqliteProfileRepository) UpdateBackgroundPath(id uint, newBackgroundP
 }
 
 func (repo sqliteProfileRepository) UpdateDisplayName(id uint, newDisplayName string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE Profile
 	SET Display_Name = ?
 	WHERE User_ID = ?
 	`
-	_, err = tx.Exec(query, newDisplayName, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newDisplayName, id)
 	if err != nil {
 		return err
 	}
@@ -407,23 +316,14 @@ func (repo sqliteProfileRepository) UpdateDisplayName(id uint, newDisplayName st
 }
 
 func (repo sqliteProfileRepository) UpdatePicturePath(id uint, newPicturePath string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE Profile
 	SET Picture_Path = ?
 	WHERE User_ID = ?
 	`
-	_, err = tx.Exec(query, newPicturePath, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newPicturePath, id)
 	if err != nil {
 		return err
 	}
@@ -432,23 +332,14 @@ func (repo sqliteProfileRepository) UpdatePicturePath(id uint, newPicturePath st
 }
 
 func (repo sqliteProfileRepository) UpdateTagName(id uint, newTagName string) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
+	db := repo.db
 
 	query := `
   UPDATE Profile
 	SET Tag_Name = ?
 	WHERE User_ID = ?
 	`
-	_, err = tx.Exec(query, newTagName, id)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(query, newTagName, id)
 	if err != nil {
 		return err
 	}
