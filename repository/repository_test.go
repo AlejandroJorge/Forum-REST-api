@@ -11,7 +11,7 @@ import (
 
 func TestMain(t *testing.M) {
 	fixWorkingDir()
-	config.Initialize()
+	config.InitializeAll()
 	t.Run()
 }
 
@@ -19,5 +19,5 @@ func fixWorkingDir() {
 	currentDir, err := os.Getwd()
 	util.PanicIfError(err)
 	workingDir := path.Dir(currentDir)
-	config.SetWorkingDir(workingDir)
+	util.SetWorkingDir(workingDir)
 }

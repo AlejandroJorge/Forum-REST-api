@@ -1,9 +1,7 @@
-package config
+package util
 
 import (
 	"os"
-
-	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 var workingDir string = ""
@@ -11,7 +9,7 @@ var workingDir string = ""
 func GetWorkingDir() string {
 	if workingDir == "" {
 		wd, err := os.Getwd()
-		util.PanicIfError(err)
+		PanicIfError(err)
 
 		workingDir = wd
 	}

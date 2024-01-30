@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 	"github.com/golang-jwt/jwt"
@@ -27,9 +28,9 @@ func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 		NewEmail    string `json:"Email"`
 		NewPassword string `json:"Password"`
 	}
-	err := util.ReadJSONRequest(r, &createReq)
+	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
 		return
 	}
 
@@ -41,26 +42,26 @@ func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 		NewPassword: createReq.NewPassword,
 	})
 	if err == util.ErrRepeatedEntity {
-		util.WriteResponse(w, http.StatusConflict, "Email already registered")
+		delivery.WriteResponse(w, http.StatusConflict, "Email already registered")
 		return
 	}
 	if err == util.ErrIncorrectParameters {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect information provided")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect information provided")
 		return
 	}
 	if err == util.ErrPasswordNotGenerated {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash the password")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash the password")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	response := struct {
 		ID uint `json:"ID"`
 	}{ID: id}
-	util.WriteJSONResponse(w, http.StatusCreated, response)
+	delivery.WriteJSONResponse(w, http.StatusCreated, response)
 }
 
 func (con userController) Login(w http.ResponseWriter, r *http.Request) {
@@ -68,26 +69,26 @@ func (con userController) Login(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"Email"`
 		Password string `json:"Password"`
 	}
-	err := util.ReadJSONRequest(r, &loginReq)
+	err := delivery.ReadJSONRequest(r, &loginReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
 	user, err := con.serv.GetByEmail(loginReq.Email)
 	if err == util.ErrEmptySelection {
-		util.WriteResponse(w, http.StatusNotFound, "There's no user with that credentials")
+		delivery.WriteResponse(w, http.StatusNotFound, "There's no user with that credentials")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve user information")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve user information")
 		fmt.Println(err)
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(loginReq.Password))
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect password")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect password")
 		return
 	}
 
@@ -99,7 +100,7 @@ func (con userController) Login(w http.ResponseWriter, r *http.Request) {
 
 	tokenStr, err := token.SignedString([]byte(os.Getenv("AUTH_SECRET")))
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't sign token")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't sign token")
 		return
 	}
 
@@ -111,47 +112,47 @@ func (con userController) Login(w http.ResponseWriter, r *http.Request) {
 		Secure:   true,
 	})
 
-	util.WriteResponse(w, http.StatusOK, "Authenticated correctly")
+	delivery.WriteResponse(w, http.StatusOK, "Authenticated correctly")
 }
 
 func (con userController) Get(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
 		return
 	}
 
 	user, err := con.serv.GetByID(uint(id))
 	if err == util.ErrEmptySelection {
-		util.WriteResponse(w, http.StatusNotFound, "Nothing found")
+		delivery.WriteResponse(w, http.StatusNotFound, "Nothing found")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Something went wrong while retrieving the user")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Something went wrong while retrieving the user")
 		return
 	}
 
-	util.WriteJSONResponse(w, http.StatusOK, user)
+	delivery.WriteJSONResponse(w, http.StatusOK, user)
 }
 
 func (con userController) Update(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
 		return
 	}
 
@@ -159,9 +160,9 @@ func (con userController) Update(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"Email"`
 		Password string `json:"Password"`
 	}
-	err = util.ReadJSONRequest(r, &updateReq)
+	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
 		return
 	}
 
@@ -173,32 +174,32 @@ func (con userController) Update(w http.ResponseWriter, r *http.Request) {
 		UpdatedPassword: updateReq.Password,
 	})
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Couldn't update") // This is uncompressed, there's more errors to handle
+		delivery.WriteResponse(w, http.StatusBadRequest, "Couldn't update") // This is uncompressed, there's more errors to handle
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Update successful")
+	delivery.WriteResponse(w, http.StatusOK, "Update successful")
 }
 
 func (con userController) Delete(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
 		return
 	}
 
 	err = con.serv.Delete(uint(id))
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete") // This is uncompressed, there's more errors to handle
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete") // This is uncompressed, there's more errors to handle
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Deleted")
+	delivery.WriteResponse(w, http.StatusOK, "Deleted")
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 	"github.com/gorilla/mux"
@@ -22,61 +23,61 @@ func (con postController) GetByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
 		return
 	}
 
 	post, err := con.serv.GetByID(uint(id))
 	if err == util.ErrEmptySelection {
-		util.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
+		delivery.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
 	}
 
-	util.WriteJSONResponse(w, http.StatusOK, post)
+	delivery.WriteJSONResponse(w, http.StatusOK, post)
 }
 
 func (con postController) GetByUserID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
 		return
 	}
 
 	post, err := con.serv.GetByUser(uint(id))
 	if err == util.ErrEmptySelection {
-		util.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
+		delivery.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
 	}
 
-	util.WriteJSONResponse(w, http.StatusOK, post)
+	delivery.WriteJSONResponse(w, http.StatusOK, post)
 }
 
 func (con postController) GetPopular(w http.ResponseWriter, r *http.Request) {
 	var getPopularReq struct {
 		Interval string `json:"Interval"`
 	}
-	err := util.ReadJSONRequest(r, &getPopularReq)
+	err := delivery.ReadJSONRequest(r, &getPopularReq)
 	if err != nil {
-		util.WriteJSONResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteJSONResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
@@ -95,20 +96,20 @@ func (con postController) GetPopular(w http.ResponseWriter, r *http.Request) {
 		getPopular = con.serv.GetPopularToday
 		break
 	default:
-		util.WriteResponse(w, http.StatusBadRequest, fmt.Sprintf("Incorrect option: %s", getPopularReq.Interval))
+		delivery.WriteResponse(w, http.StatusBadRequest, fmt.Sprintf("Incorrect option: %s", getPopularReq.Interval))
 		return
 	}
 
 	posts, err := getPopular()
 	if err == util.ErrEmptySelection {
-		util.WriteResponse(w, http.StatusNotFound, "No posts matched criteria")
+		delivery.WriteResponse(w, http.StatusNotFound, "No posts matched criteria")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve posts")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve posts")
 	}
 
-	util.WriteJSONResponse(w, http.StatusOK, posts)
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
 }
 
 func (con postController) Create(w http.ResponseWriter, r *http.Request) {
@@ -118,9 +119,9 @@ func (con postController) Create(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"Description"`
 		Content     string `json:"Content"`
 	}
-	err := util.ReadJSONRequest(r, &createReq)
+	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
@@ -136,11 +137,11 @@ func (con postController) Create(w http.ResponseWriter, r *http.Request) {
 		Content:     createReq.Content,
 	})
 	if err == util.ErrNoCorrespondingUser {
-		util.WriteResponse(w, http.StatusBadRequest, "Owner doesn't exist")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Owner doesn't exist")
 		return
 	}
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't create post")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create post")
 		return
 	}
 
@@ -149,20 +150,20 @@ func (con postController) Create(w http.ResponseWriter, r *http.Request) {
 	}{
 		ID: id,
 	}
-	util.WriteJSONResponse(w, http.StatusOK, response)
+	delivery.WriteJSONResponse(w, http.StatusOK, response)
 }
 
 func (con postController) Update(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
 		return
 	}
 
@@ -171,9 +172,9 @@ func (con postController) Update(w http.ResponseWriter, r *http.Request) {
 		UpdatedDescription string `json:"Description"`
 		UpdatedContent     string `json:"Content"`
 	}
-	err = util.ReadJSONRequest(r, &updateReq)
+	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
@@ -187,11 +188,11 @@ func (con postController) Update(w http.ResponseWriter, r *http.Request) {
 		UpdatedContent:     updateReq.UpdatedContent,
 	})
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't update")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't update")
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Updated post successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Updated post successfully")
 }
 
 func (con postController) AddLike(w http.ResponseWriter, r *http.Request) {
@@ -199,19 +200,19 @@ func (con postController) AddLike(w http.ResponseWriter, r *http.Request) {
 		UserID uint `json:"UserID"`
 		PostID uint `json:"PostID"`
 	}
-	err := util.ReadJSONRequest(r, &addLikeReq)
+	err := delivery.ReadJSONRequest(r, &addLikeReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
 	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.PostID)
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't create like")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create like")
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Like created successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Like created successfully")
 }
 
 func (con postController) DeleteLike(w http.ResponseWriter, r *http.Request) {
@@ -219,40 +220,40 @@ func (con postController) DeleteLike(w http.ResponseWriter, r *http.Request) {
 		UserID uint `json:"UserID"`
 		PostID uint `json:"PostID"`
 	}
-	err := util.ReadJSONRequest(r, &deleteLikeReq)
+	err := delivery.ReadJSONRequest(r, &deleteLikeReq)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
 	err = con.serv.DeleteLike(deleteLikeReq.UserID, deleteLikeReq.PostID)
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete like")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete like")
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Like deleted successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Like deleted successfully")
 }
 
 func (con postController) Delete(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	idStr, ok := params["id"]
 	if !ok {
-		util.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
 		return
 	}
 
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		util.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
 		return
 	}
 
 	err = con.serv.Delete(uint(id))
 	if err != nil {
-		util.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete post")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete post")
 		return
 	}
 
-	util.WriteResponse(w, http.StatusOK, "Post deleted successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Post deleted successfully")
 }

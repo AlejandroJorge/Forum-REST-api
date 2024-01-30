@@ -14,43 +14,41 @@ var sqliteDB *sql.DB
 
 func SQLiteDatabase() *sql.DB {
 	if sqliteDB == nil {
-		currentDir := GetWorkingDir()
-
-		folderName, ok := os.LookupEnv("SQLITE_DB_FOLDER_NAME")
-		if !ok {
-			folderName = "data"
-		}
-		fileName, ok := os.LookupEnv("SQLITE_DB_FILE_NAME")
-		if !ok {
-			fileName = "database.sqlite"
-		}
-
-		folderPath := path.Join(currentDir, folderName)
-		err := os.Mkdir(folderPath, 0755)
-		if err != nil && !os.IsExist(err) {
-			fmt.Println(err)
-			panic(err)
-		}
-
-		dbPath := path.Join(folderPath, fileName)
-
-		connectionStr := "file:" + dbPath + "?_journal=WAL&_foreign_keys=true"
-		newDB, err := sql.Open("sqlite3", connectionStr)
-		util.PanicIfError(err)
-
-		sqliteDB = newDB
+		initializeSQLiteDatabase()
 	}
 	return sqliteDB
 }
 
+func initializeSQLiteDatabase() {
+	currentDir := util.GetWorkingDir()
+
+	folderName := GetParams().DbFolderName
+	fileName := GetParams().DbFileName
+
+	folderPath := path.Join(currentDir, folderName)
+	err := os.Mkdir(folderPath, 0755)
+	if err != nil && !os.IsExist(err) {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	dbPath := path.Join(folderPath, fileName)
+
+	connectionStr := "file:" + dbPath + "?_journal=WAL&_foreign_keys=true"
+	newDB, err := sql.Open("sqlite3", connectionStr)
+	util.PanicIfError(err)
+
+	sqliteDB = newDB
+}
+
 // Runs the migration script(s), panics if it fails
-func RunSQLiteMigration() {
-	MustRunSQLiteScript("schema.sql")
+func runSQLiteMigration() {
+	mustRunSQLiteScript("schema.sql")
 }
 
 // Runs a SQL script in sql/ folder
-func RunSQLiteScript(scriptName string) error {
-	currentDir := GetWorkingDir()
+func runSQLiteScript(scriptName string) error {
+	currentDir := util.GetWorkingDir()
 
 	filePath := path.Join(currentDir, "sql", scriptName)
 	scriptBytes, err := os.ReadFile(filePath)
@@ -69,6 +67,6 @@ func RunSQLiteScript(scriptName string) error {
 }
 
 // Runs a SQL script in sql/ folder, panics when it fails
-func MustRunSQLiteScript(scriptName string) {
-	util.PanicIfError(RunSQLiteScript(scriptName))
+func mustRunSQLiteScript(scriptName string) {
+	util.PanicIfError(runSQLiteScript(scriptName))
 }

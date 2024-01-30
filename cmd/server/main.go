@@ -3,19 +3,17 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery/router"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
 )
 
 func main() {
-	config.Initialize()
+	config.InitializeAll()
 
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8080"
-	}
-	fmt.Printf("Listening on http://localhost:%s", port)
-	http.ListenAndServe(fmt.Sprintf(":%s", port), router.AppRouter())
+	logging.LogSetup()
+	fmt.Printf("Listening on http://localhost:%d", config.GetParams().Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", config.GetParams().Port), router.AppRouter())
+
 }

@@ -24,6 +24,8 @@ func AppRouter() http.Handler {
 }
 
 func initializeRouter(router *mux.Router) {
+	router.Use(middleware.Logger)
+
 	initializeUserRoutes(router)
 	initializeProfileRoutes(router)
 	initializePostRoutes(router)

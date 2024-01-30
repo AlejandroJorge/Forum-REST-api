@@ -1,6 +1,8 @@
 package config
 
-func Initialize() {
-	LoadEnvVariables()
-	RunSQLiteMigration()
+func InitializeAll() {
+	loadEnvVariables()
+	initializeConfigParameters()
+	initializeSQLiteDatabase()
+	runSQLiteMigration()
 }
