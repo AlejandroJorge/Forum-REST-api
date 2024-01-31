@@ -2,6 +2,8 @@ package service
 
 import (
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -10,75 +12,151 @@ type userServiceImpl struct {
 	repo domain.UserRepository
 }
 
-func (serv userServiceImpl) CreateNew(createInfo struct {
-	NewEmail    string
-	NewPassword string
-}) (uint, error) {
-	if !util.IsEmailFormat(createInfo.NewEmail) || createInfo.NewPassword == "" {
-		return 0, util.ErrIncorrectParameters
+// Returns the ID of the created user, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrExistingEmail
+func (serv userServiceImpl) Create(email, password string) (uint, error) {
+	if !util.IsEmailFormat(email) || password == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return 0, ErrIncorrectParameters
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(createInfo.NewPassword), 10)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
-		return 0, util.ErrPasswordNotGenerated
+		logging.LogDomainError(ErrPasswordUnableToHash)
+		return 0, ErrPasswordUnableToHash
 	}
 
-	newID, err := serv.repo.CreateNew(domain.User{
-		Email:          createInfo.NewEmail,
-		HashedPassword: string(hashedPassword),
-	})
+	newID, err := serv.repo.Create(email, string(hashedPassword))
+	if err == repository.ErrRepeatedEntity {
+		logging.LogDomainError(ErrExistingEmail)
+		return 0, ErrExistingEmail
+	}
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedDomainError(err)
+		return 0, ErrUnknown
 	}
 
 	return newID, nil
 }
 
+// Can return ErrNotExistingEntity
 func (serv userServiceImpl) Delete(id uint) error {
-	return serv.repo.Delete(id)
+	err := serv.repo.Delete(id)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	return nil
 }
 
+// Returns a valid user, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv userServiceImpl) GetByEmail(email string) (domain.User, error) {
 	if !util.IsEmailFormat(email) {
-		return domain.User{}, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return domain.User{}, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetByEmail(email)
+	user, err := serv.repo.GetByEmail(email)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return domain.User{}, ErrNotExistingEntity
+	}
+	if err != nil {
+		return domain.User{}, ErrUnknown
+	}
+
+	return user, nil
 }
 
+// Returns a valid user, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv userServiceImpl) GetByID(id uint) (domain.User, error) {
 	if id == 0 {
-		return domain.User{}, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return domain.User{}, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetByID(id)
+	user, err := serv.repo.GetByID(id)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return domain.User{}, ErrNotExistingEntity
+	}
+	if err != nil {
+		return domain.User{}, ErrUnknown
+	}
+
+	return user, nil
 }
 
-func (serv userServiceImpl) Update(id uint, updateInfo struct {
-	UpdatedEmail    string
-	UpdatedPassword string
-}) error {
-	if id == 0 {
-		return util.ErrIncorrectParameters
+// Can return ErrNotExistingEntity
+func (serv userServiceImpl) UpdateEmail(id uint, email string) error {
+	if id == 0 || !util.IsEmailFormat(email) {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	if util.IsEmailFormat(updateInfo.UpdatedEmail) {
-		err := serv.repo.UpdateEmail(id, updateInfo.UpdatedEmail)
-		if err != nil {
-			return err
-		}
+	err := serv.repo.UpdateEmail(id, email)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		return ErrUnknown
 	}
 
-	if updateInfo.UpdatedPassword != "" {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(updateInfo.UpdatedPassword), 10)
-		if err != nil {
-			return util.ErrPasswordNotGenerated
-		}
+	return nil
+}
 
-		err = serv.repo.UpdateHashedPassword(id, string(hashed))
-		if err != nil {
-			return err
-		}
+// Can return ErrNotExistingEntity, ErrIncorrectParameters, ErrPasswordUnableToHash
+func (serv userServiceImpl) UpdatePassword(id uint, password string) error {
+	if id == 0 || password == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		logging.LogDomainError(ErrPasswordUnableToHash)
+		return ErrPasswordUnableToHash
+	}
+
+	err = serv.repo.UpdateHashedPassword(id, string(hashed))
+	if err == repository.ErrNoRowsAffected {
+		logging.LogUnexpectedDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	return nil
+}
+
+// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrNotExistingEntity
+func (serv userServiceImpl) CheckCredentials(email, password string) error {
+	if !util.IsEmailFormat(email) || password == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
+	}
+
+	user, err := serv.repo.GetByEmail(email)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogDomainError(err)
+		return ErrUnknown
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+	if err != nil {
+		logging.LogDomainError(ErrNotValidCredentials)
+		return ErrNotValidCredentials
 	}
 
 	return nil

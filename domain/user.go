@@ -46,15 +46,24 @@ type UserRepository interface {
 }
 
 type UserService interface {
+	// Returns the ID of the created user, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrExistingEmail
 	Create(email, password string) (uint, error)
 
+	// Can return ErrNotExistingEntity
 	Delete(id uint) error
 
+	// Can return ErrNotExistingEntity
 	UpdateEmail(id uint, email string) error
 
+	// Can return ErrNotExistingEntity, ErrIncorrectParameters, ErrPasswordUnableToHash
 	UpdatePassword(id uint, password string) error
 
+	// Returns a valid user, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByID(id uint) (User, error)
 
+	// Returns a valid user, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByEmail(email string) (User, error)
+
+	// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrNotExistingEntity
+	CheckCredentials(email, password string) error
 }
