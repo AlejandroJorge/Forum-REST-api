@@ -56,7 +56,7 @@ Where is development going right now
 - [ ] Custom errors for domain / service layer (include default error)
 - [ ] Logging for domain / service layer errors
 - [ ] Validation of JSON requests in controllers (mandatory fields, format, etc)
-- [ ] Expand update methods for services (decompress)
+- [x] Expand update methods for services (decompress)
 - [x] Documentation in comments for repositories (errors, optional args, etc)
 - [ ] Documentation in comments for services (errors, optional args, etc)
 - [ ] Remake tests for repositories

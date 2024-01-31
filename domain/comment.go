@@ -22,7 +22,7 @@ func (c Comment) Validate() bool {
 }
 
 type CommentRepository interface {
-	// Returns the id of the created comment, can return ErrNoMatchingDependency, ErrRepeatedEntity
+	// Returns the id of the created comment, can return ErrNoMatchingDependency
 	Create(postID, userID uint, content string) (uint, error)
 
 	// Can return ErrNoRowsAffected
@@ -48,7 +48,7 @@ type CommentRepository interface {
 }
 
 type CommentService interface {
-	CreateNew(userID, postID uint, content string) (uint, error)
+	Create(userID, postID uint, content string) (uint, error)
 
 	Delete(id uint) error
 

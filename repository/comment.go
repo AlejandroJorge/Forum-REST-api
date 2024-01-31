@@ -35,7 +35,7 @@ func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
 	return nil
 }
 
-// Returns the id of the created comment, can return ErrNoMatchingDependency, ErrRepeatedEntity
+// Returns the id of the created comment, can return ErrNoMatchingDependency
 func (repo sqliteCommentRepository) Create(postID, userID uint, content string) (uint, error) {
 	db := repo.db
 
@@ -48,10 +48,6 @@ func (repo sqliteCommentRepository) Create(postID, userID uint, content string) 
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			logging.LogRepositoryError(ErrNoMatchingDependency)
 			return 0, ErrNoMatchingDependency
-		}
-		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			logging.LogRepositoryError(ErrRepeatedEntity)
-			return 0, ErrRepeatedEntity
 		}
 	}
 	if err != nil {
