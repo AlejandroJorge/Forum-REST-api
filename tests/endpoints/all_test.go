@@ -1,4 +1,4 @@
-package repository
+package endpoints
 
 import (
 	"testing"
@@ -10,5 +10,6 @@ import (
 func TestMain(t *testing.M) {
 	tests.FixWorkingDir()
 	config.InitializeAll()
+	tests.RunMockSQLiteMigration()
 	t.Run()
 }

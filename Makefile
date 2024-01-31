@@ -21,3 +21,4 @@ test:
 clean:
 	-rm -r data/
 	-rm -r build/
+	-rm -r mock/
