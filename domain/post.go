@@ -30,7 +30,7 @@ func (p Post) Validate() bool {
 }
 
 type PostRepository interface {
-	CreateNew(ownerID uint, title, description, content string) (uint, error)
+	Create(ownerID uint, title, description, content string) (uint, error)
 
 	Delete(id uint) error
 

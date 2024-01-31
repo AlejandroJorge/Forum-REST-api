@@ -69,7 +69,7 @@ func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
 }
 
 // Returns the id of the created post and can return ErrNoMatchingDependency, ErrRepeatedEntity
-func (repo sqlitePostRepository) CreateNew(ownerID uint, title, description, content string) (uint, error) {
+func (repo sqlitePostRepository) Create(ownerID uint, title, description, content string) (uint, error) {
 	db := repo.db
 
 	query := `

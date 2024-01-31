@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -12,6 +12,7 @@ type sqliteCommentRepository struct {
 	db *sql.DB
 }
 
+// Can return ErrNoMatchingDependency
 func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
 	db := repo.db
 
@@ -22,41 +23,52 @@ func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
 	_, err := db.Exec(query, userId, commentId)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
-			err = util.ErrNoCorrespondingProfileOrComment
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return ErrNoMatchingDependency
 		}
 	}
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
 	}
 
 	return nil
 }
 
-func (repo sqliteCommentRepository) CreateNew(comment domain.Comment) (uint, error) {
+// Can return ErrNoMatchingDependency, ErrRepeatedEntity
+func (repo sqliteCommentRepository) Create(postID, userID uint, content string) (uint, error) {
 	db := repo.db
 
 	query := `
 	INSERT INTO Comment(Post_ID, User_ID, Content)
 	VALUES (?,?,?)
 	`
-	res, err := db.Exec(query, comment.PostID, comment.UserID, comment.Content)
+	res, err := db.Exec(query, postID, userID, content)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
-			err = util.ErrNoCorrespondingProfileOrPost
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return 0, ErrNoMatchingDependency
+		}
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return 0, ErrRepeatedEntity
 		}
 	}
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
-	id, err := res.LastInsertId()
+	newId, err := res.LastInsertId()
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
-	return uint(id), nil
+	return uint(newId), nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteCommentRepository) Delete(id uint) error {
 	db := repo.db
 
@@ -72,6 +84,7 @@ func (repo sqliteCommentRepository) Delete(id uint) error {
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteCommentRepository) DeleteLike(userId uint, commentId uint) error {
 	db := repo.db
 
@@ -79,19 +92,27 @@ func (repo sqliteCommentRepository) DeleteLike(userId uint, commentId uint) erro
 	DELETE FROM Comment_Likings
 	WHERE Liker_ID = ? AND Comment_ID = ?
 	`
-	_, err := db.Exec(query, userId, commentId)
-	if sqliteErr, ok := err.(sqlite3.Error); ok {
-		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
-			err = util.ErrNoCorrespondingProfileOrComment
-		}
-	}
+	res, err := db.Exec(query, userId, commentId)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Returns a valid comment and can return ErrEmptySelection
 func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
 	db := repo.db
 
@@ -105,16 +126,19 @@ func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
 	`
 	row := db.QueryRow(query, id)
 	err := row.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
+	if err == sql.ErrNoRows {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return domain.Comment{}, ErrEmptySelection
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			err = util.ErrEmptySelection
-		}
-		return domain.Comment{}, err
+		logging.LogUnexpectedRepositoryError(err)
+		return domain.Comment{}, ErrUnknown
 	}
 
 	return comment, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, error) {
 	db := repo.db
 
@@ -130,26 +154,30 @@ func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, er
 	`
 	rows, err := db.Query(query, postID)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
 		var comment domain.Comment
 		err = rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
 		comments = append(comments, comment)
 	}
 
 	if len(comments) == 0 {
-		return nil, util.ErrEmptySelection
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
 	return comments, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, error) {
 	db := repo.db
 
@@ -165,26 +193,30 @@ func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, er
 	`
 	rows, err := db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
 		var comment domain.Comment
 		err = rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.Likes)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
 		comments = append(comments, comment)
 	}
 
 	if len(comments) == 0 {
-		return nil, util.ErrEmptySelection
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
 	return comments, nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteCommentRepository) UpdateContent(id uint, newContent string) error {
 	db := repo.db
 
@@ -193,9 +225,21 @@ func (repo sqliteCommentRepository) UpdateContent(id uint, newContent string) er
 	SET Content = ?
 	WHERE Comment_ID = ?
 	`
-	_, err := db.Exec(query, newContent, id)
+	res, err := db.Exec(query, newContent, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil

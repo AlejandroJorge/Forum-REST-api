@@ -22,7 +22,7 @@ func (c Comment) Validate() bool {
 }
 
 type CommentRepository interface {
-	CreateNew(postID, userID uint, content string) (uint, error)
+	Create(postID, userID uint, content string) (uint, error)
 
 	Delete(id uint) error
 
