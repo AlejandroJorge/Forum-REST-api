@@ -48,19 +48,27 @@ type CommentRepository interface {
 }
 
 type CommentService interface {
+	// Returns the ID of the generated comment, can return ErrIncorrectParameters, ErrDependencySatisfied
 	Create(userID, postID uint, content string) (uint, error)
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Delete(id uint) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Update(id uint, updatedContent string) error
 
+	// Returns a valid comment, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByID(id uint) (Comment, error)
 
+	// Returns a slice of valid comments, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByPost(postID uint) ([]Comment, error)
 
+	// Returns a slice of valid comments, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByUser(userID uint) ([]Comment, error)
 
+	// Can return ErrIncorrectParameters, ErrDependencyNotSatisfied
 	AddLike(userId uint, commentId uint) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	DeleteLike(userId uint, commentId uint) error
 }

@@ -4,13 +4,13 @@ import (
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
-	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
 type commentServiceImpl struct {
 	repo domain.CommentRepository
 }
 
+// Can return ErrIncorrectParameters, ErrDependencyNotSatisfied
 func (serv commentServiceImpl) AddLike(userId uint, commentId uint) error {
 	if userId == 0 || commentId == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -30,6 +30,7 @@ func (serv commentServiceImpl) AddLike(userId uint, commentId uint) error {
 	return nil
 }
 
+// Returns the ID of the generated comment, can return ErrIncorrectParameters, ErrDependencySatisfied
 func (serv commentServiceImpl) Create(userID, postID uint, content string) (uint, error) {
 	if userID == 0 || postID == 0 || content == "" {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -49,6 +50,7 @@ func (serv commentServiceImpl) Create(userID, postID uint, content string) (uint
 	return id, nil
 }
 
+// Can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) Delete(id uint) error {
 	if id == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -58,7 +60,7 @@ func (serv commentServiceImpl) Delete(id uint) error {
 	err := serv.repo.Delete(id)
 	if err == repository.ErrNoRowsAffected {
 		logging.LogDomainError(ErrNotExistingEntity)
-		return ErrIncorrectParameters
+		return ErrNotExistingEntity
 	}
 	if err != nil {
 		logging.LogUnexpectedDomainError(err)
@@ -68,6 +70,7 @@ func (serv commentServiceImpl) Delete(id uint) error {
 	return nil
 }
 
+// Can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) DeleteLike(userId uint, commentId uint) error {
 	if userId == 0 || commentId == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -77,7 +80,7 @@ func (serv commentServiceImpl) DeleteLike(userId uint, commentId uint) error {
 	err := serv.repo.DeleteLike(userId, commentId)
 	if err == repository.ErrNoRowsAffected {
 		logging.LogDomainError(ErrNotExistingEntity)
-		return ErrIncorrectParameters
+		return ErrNotExistingEntity
 	}
 	if err != nil {
 		logging.LogUnexpectedDomainError(err)
@@ -87,6 +90,7 @@ func (serv commentServiceImpl) DeleteLike(userId uint, commentId uint) error {
 	return nil
 }
 
+// Returns a valid comment, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) GetByID(id uint) (domain.Comment, error) {
 	if id == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -106,6 +110,7 @@ func (serv commentServiceImpl) GetByID(id uint) (domain.Comment, error) {
 	return comment, nil
 }
 
+// Returns a slice of valid comments, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) GetByPost(postID uint) ([]domain.Comment, error) {
 	if postID == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -125,6 +130,7 @@ func (serv commentServiceImpl) GetByPost(postID uint) ([]domain.Comment, error) 
 	return comments, nil
 }
 
+// Returns a slice of valid comments, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) GetByUser(userID uint) ([]domain.Comment, error) {
 	if userID == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -144,6 +150,7 @@ func (serv commentServiceImpl) GetByUser(userID uint) ([]domain.Comment, error) 
 	return comments, nil
 }
 
+// Can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv commentServiceImpl) Update(id uint, updatedContent string) error {
 	if id == 0 || updatedContent == "" {
 		logging.LogDomainError(ErrIncorrectParameters)
