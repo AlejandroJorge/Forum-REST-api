@@ -26,10 +26,12 @@ func AppRouter() http.Handler {
 func initializeRouter(router *mux.Router) {
 	router.Use(middleware.Logger)
 
-	initializeUserRoutes(router)
-	initializeProfileRoutes(router)
-	initializePostRoutes(router)
-	initializeCommentRoutes(router)
+	apiRouter := router.PathPrefix("/api/v1").Subrouter()
+
+	initializeUserRoutes(apiRouter)
+	initializeProfileRoutes(apiRouter)
+	initializePostRoutes(apiRouter)
+	initializeCommentRoutes(apiRouter)
 }
 
 func initializeUserRoutes(router *mux.Router) {
@@ -37,19 +39,22 @@ func initializeUserRoutes(router *mux.Router) {
 	service := service.NewUserService(repository)
 	controller := controller.NewUserController(service)
 
-	router.HandleFunc("/api/v1/users",
+	router.HandleFunc("/users",
 		controller.Create).Methods("POST")
 
-	router.HandleFunc("/api/v1/users/login",
-		controller.Login).Methods("POST")
+	router.HandleFunc("/users/login",
+		controller.CheckCredentials).Methods("POST")
 
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
-		middleware.Auth(controller.Get)).Methods("GET")
+	router.HandleFunc("/users/{id:[0-9]+}",
+		middleware.Auth(controller.GetByID)).Methods("GET")
 
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
-		middleware.Auth(controller.Update)).Methods("PUT")
+	router.HandleFunc("/users/{id:[0-9]+}/email",
+		middleware.Auth(controller.UpdateEmail)).Methods("PUT")
 
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}",
+	router.HandleFunc("/users/{id:[0-9]+}/password",
+		middleware.Auth(controller.UpdatePassword)).Methods("PUT")
+
+	router.HandleFunc("/users/{id:[0-9]+}",
 		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
 
@@ -58,17 +63,38 @@ func initializeProfileRoutes(router *mux.Router) {
 	service := service.NewProfileService(repository)
 	controller := controller.NewProfileController(service)
 
-	router.HandleFunc("/api/v1/profiles", controller.Create).Methods("POST")
-	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.GetByID).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}", controller.GetByTagName).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}/followers", controller.GetFollowersByID).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/followers", controller.GetFollowersByTagName).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}/follows", controller.GetFollowsByID).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/follows", controller.GetFollowsByTagName).Methods("GET")
-	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.Update).Methods("PUT")
-	router.HandleFunc("/api/v1/profiles/follows", controller.CreateFollow).Methods("POST")
-	router.HandleFunc("/api/v1/profiles/follows", controller.DeleteFollow).Methods("DELETE")
-	router.HandleFunc("/api/v1/profiles/{id:[0-9]+}", controller.Delete).Methods("DELETE")
+	router.HandleFunc("/profiles",
+		controller.Create).Methods("POST")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}",
+		controller.GetByID).Methods("GET")
+
+	router.HandleFunc("/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}",
+		controller.GetByTagName).Methods("GET")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}/followers",
+		controller.GetFollowersByID).Methods("GET")
+
+	router.HandleFunc("/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/followers",
+		controller.GetFollowersByTagName).Methods("GET")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}/follows",
+		controller.GetFollowsByID).Methods("GET")
+
+	router.HandleFunc("/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/follows",
+		controller.GetFollowsByTagName).Methods("GET")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}",
+		controller.Update).Methods("PUT")
+
+	router.HandleFunc("/profiles/follows",
+		controller.CreateFollow).Methods("POST")
+
+	router.HandleFunc("/profiles/follows",
+		controller.DeleteFollow).Methods("DELETE")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}",
+		controller.Delete).Methods("DELETE")
 }
 
 func initializePostRoutes(router *mux.Router) {
@@ -76,14 +102,29 @@ func initializePostRoutes(router *mux.Router) {
 	service := service.NewPostService(repository)
 	controller := controller.NewPostController(service)
 
-	router.HandleFunc("/api/v1/posts", controller.Create).Methods("POST")
-	router.HandleFunc("/api/v1/posts", controller.GetPopular).Methods("GET")
-	router.HandleFunc("/api/v1/posts/{id:[0-9]+}", controller.GetByID).Methods("GET")
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}/posts", controller.GetByUserID).Methods("GET")
-	router.HandleFunc("/api/v1/posts/{id:[0-9]+}", controller.Update).Methods("PUT")
-	router.HandleFunc("/api/v1/posts/likes", controller.AddLike).Methods("POST")
-	router.HandleFunc("/api/v1/posts/likes", controller.DeleteLike).Methods("DELETE")
-	router.HandleFunc("/api/v1/posts/{id:[0-9]+}", controller.Delete).Methods("DELETE")
+	router.HandleFunc("/posts",
+		controller.Create).Methods("POST")
+
+	router.HandleFunc("/posts",
+		controller.GetPopular).Methods("GET")
+
+	router.HandleFunc("/posts/{id:[0-9]+}",
+		controller.GetByID).Methods("GET")
+
+	router.HandleFunc("/users/{id:[0-9]+}/posts",
+		controller.GetByUserID).Methods("GET")
+
+	router.HandleFunc("/posts/{id:[0-9]+}",
+		controller.Update).Methods("PUT")
+
+	router.HandleFunc("/posts/likes",
+		controller.AddLike).Methods("POST")
+
+	router.HandleFunc("/posts/likes",
+		controller.DeleteLike).Methods("DELETE")
+
+	router.HandleFunc("/posts/{id:[0-9]+}",
+		controller.Delete).Methods("DELETE")
 }
 
 func initializeCommentRoutes(router *mux.Router) {
@@ -91,12 +132,27 @@ func initializeCommentRoutes(router *mux.Router) {
 	service := service.NewCommentService(repository)
 	controller := controller.NewCommentController(service)
 
-	router.HandleFunc("/api/v1/comments", controller.Create).Methods("POST")
-	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.GetByID).Methods("GET")
-	router.HandleFunc("/api/v1/users/{id:[0-9]+}/comments", controller.GetByUser).Methods("GET")
-	router.HandleFunc("/api/v1/posts/{id:[0-9]+/comments}", controller.GetByPost).Methods("GET")
-	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.Update).Methods("PUT")
-	router.HandleFunc("/api/v1/comments/likes", controller.CreateLike).Methods("POST")
-	router.HandleFunc("/api/v1/comments/likes", controller.DeleteLike).Methods("DELETE")
-	router.HandleFunc("/api/v1/comments/{id:[0-9]+}", controller.Delete).Methods("DELETE")
+	router.HandleFunc("/comments",
+		controller.Create).Methods("POST")
+
+	router.HandleFunc("/comments/{id:[0-9]+}",
+		controller.GetByID).Methods("GET")
+
+	router.HandleFunc("/users/{id:[0-9]+}/comments",
+		controller.GetByUser).Methods("GET")
+
+	router.HandleFunc("/posts/{id:[0-9]+/comments}",
+		controller.GetByPost).Methods("GET")
+
+	router.HandleFunc("/comments/{id:[0-9]+}",
+		controller.Update).Methods("PUT")
+
+	router.HandleFunc("/comments/likes",
+		controller.CreateLike).Methods("POST")
+
+	router.HandleFunc("/comments/likes",
+		controller.DeleteLike).Methods("DELETE")
+
+	router.HandleFunc("/comments/{id:[0-9]+}",
+		controller.Delete).Methods("DELETE")
 }

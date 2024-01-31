@@ -52,7 +52,7 @@ type UserService interface {
 	// Can return ErrNotExistingEntity
 	Delete(id uint) error
 
-	// Can return ErrNotExistingEntity
+	// Can return ErrNotExistingEntity, ErrIncorrectParameters
 	UpdateEmail(id uint, email string) error
 
 	// Can return ErrNotExistingEntity, ErrIncorrectParameters, ErrPasswordUnableToHash

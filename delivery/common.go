@@ -2,20 +2,17 @@ package delivery
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/AlejandroJorge/forum-rest-api/logging"
-	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/gorilla/mux"
 )
 
 func ReadJSONRequest(r *http.Request, data interface{}) error {
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(data)
-	if err != nil {
-		return util.ErrIncorrectParameters
-	}
-
-	return nil
+	return decoder.Decode(data)
 }
 
 func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
@@ -29,10 +26,36 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) 
 		w.Write([]byte(errorMsg))
 		logging.LogResponse(statusCode, errorMsg)
 	}
+	logging.LogResponse(statusCode, data)
 }
 
 func WriteResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.WriteHeader(statusCode)
 	w.Write([]byte(message))
 	logging.LogResponse(statusCode, message)
+}
+
+func ParseUintParam(r *http.Request, key string) (uint, error) {
+	params := mux.Vars(r)
+	valueStr, ok := params[key]
+	if !ok {
+		return 0, errors.New("Parameter doesn't exist")
+	}
+
+	value, err := strconv.ParseUint(valueStr, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint(value), nil
+}
+
+func ParseStringParam(r *http.Request, key string) (string, error) {
+	params := mux.Vars(r)
+	value, ok := params[key]
+	if !ok {
+		return "", errors.New("Parameter doesn't exist")
+	}
+
+	return value, nil
 }

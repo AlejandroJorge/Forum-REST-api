@@ -1,32 +1,37 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/AlejandroJorge/forum-rest-api/service"
 	"github.com/golang-jwt/jwt"
-	"github.com/gorilla/mux"
-	"golang.org/x/crypto/bcrypt"
 )
 
-type userController struct {
+type UserController interface {
+	Create(w http.ResponseWriter, r *http.Request)
+	Delete(w http.ResponseWriter, r *http.Request)
+	UpdateEmail(w http.ResponseWriter, r *http.Request)
+	UpdatePassword(w http.ResponseWriter, r *http.Request)
+	GetByID(w http.ResponseWriter, r *http.Request)
+	CheckCredentials(w http.ResponseWriter, r *http.Request)
+}
+
+type userControllerImpl struct {
 	serv domain.UserService
 }
 
-func NewUserController(serv domain.UserService) userController {
-	return userController{serv: serv}
+func NewUserController(serv domain.UserService) UserController {
+	return userControllerImpl{serv: serv}
 }
 
-func (con userController) Create(w http.ResponseWriter, r *http.Request) {
+func (con userControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	var createReq struct {
-		NewEmail    string `json:"Email"`
-		NewPassword string `json:"Password"`
+		Email    string `json:"Email"`
+		Password string `json:"Password"`
 	}
 	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
@@ -34,23 +39,17 @@ func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := con.serv.CreateNew(struct {
-		NewEmail    string
-		NewPassword string
-	}{
-		NewEmail:    createReq.NewEmail,
-		NewPassword: createReq.NewPassword,
-	})
-	if err == util.ErrRepeatedEntity {
-		delivery.WriteResponse(w, http.StatusConflict, "Email already registered")
+	id, err := con.serv.Create(createReq.Email, createReq.Password)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
 		return
 	}
-	if err == util.ErrIncorrectParameters {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect information provided")
+	if err == service.ErrPasswordUnableToHash {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash password")
 		return
 	}
-	if err == util.ErrPasswordNotGenerated {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash the password")
+	if err == service.ErrExistingEmail {
+		delivery.WriteResponse(w, http.StatusConflict, "This email is already registered")
 		return
 	}
 	if err != nil {
@@ -64,7 +63,7 @@ func (con userController) Create(w http.ResponseWriter, r *http.Request) {
 	delivery.WriteJSONResponse(w, http.StatusCreated, response)
 }
 
-func (con userController) Login(w http.ResponseWriter, r *http.Request) {
+func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Request) {
 	var loginReq struct {
 		Email    string `json:"Email"`
 		Password string `json:"Password"`
@@ -75,26 +74,27 @@ func (con userController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := con.serv.GetByEmail(loginReq.Email)
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There's no user with that credentials")
+	err = con.serv.CheckCredentials(loginReq.Email, loginReq.Password)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		return
+	}
+	if err == service.ErrPasswordUnableToHash {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash password")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user for this email")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve user information")
-		fmt.Println(err)
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(loginReq.Password))
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect password")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	expireDate := time.Now().Add(time.Minute * 10)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss": user.ID,
+		"iss": loginReq.Email,
 		"exp": expireDate.Unix(),
 	})
 
@@ -115,49 +115,71 @@ func (con userController) Login(w http.ResponseWriter, r *http.Request) {
 	delivery.WriteResponse(w, http.StatusOK, "Authenticated correctly")
 }
 
-func (con userController) Get(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func (con userControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
 	user, err := con.serv.GetByID(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "Nothing found")
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user with this ID")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Something went wrong while retrieving the user")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteJSONResponse(w, http.StatusOK, user)
 }
 
-func (con userController) Update(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func (con userControllerImpl) UpdateEmail(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
 	var updateReq struct {
-		Email    string `json:"Email"`
+		Email string `json:"Email"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		return
+	}
+
+	err = con.serv.UpdateEmail(id, updateReq.Email)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user with this ID")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Update successful")
+}
+
+func (con userControllerImpl) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
+		return
+	}
+
+	var updateReq struct {
 		Password string `json:"Password"`
 	}
 	err = delivery.ReadJSONRequest(r, &updateReq)
@@ -166,38 +188,41 @@ func (con userController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = con.serv.Update(uint(id), struct {
-		UpdatedEmail    string
-		UpdatedPassword string
-	}{
-		UpdatedEmail:    updateReq.Email,
-		UpdatedPassword: updateReq.Password,
-	})
+	err = con.serv.UpdatePassword(id, updateReq.Password)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user with this ID")
+		return
+	}
+	if err == service.ErrPasswordUnableToHash {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't hash password")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Couldn't update") // This is uncompressed, there's more errors to handle
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteResponse(w, http.StatusOK, "Update successful")
 }
 
-func (con userController) Delete(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+func (con userControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+	err = con.serv.Delete(id)
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user with this ID")
 		return
 	}
-
-	err = con.serv.Delete(uint(id))
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete") // This is uncompressed, there's more errors to handle
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 

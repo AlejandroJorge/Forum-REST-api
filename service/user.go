@@ -91,7 +91,7 @@ func (serv userServiceImpl) GetByID(id uint) (domain.User, error) {
 	return user, nil
 }
 
-// Can return ErrNotExistingEntity
+// Can return ErrNotExistingEntity, ErrIncorrectParameters
 func (serv userServiceImpl) UpdateEmail(id uint, email string) error {
 	if id == 0 || !util.IsEmailFormat(email) {
 		logging.LogDomainError(ErrIncorrectParameters)

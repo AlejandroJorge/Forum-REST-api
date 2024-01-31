@@ -53,12 +53,12 @@ Where is development going right now
 - [x] Custom errors for data / repository layer (include default error)
 - [x] Logging for data / repository layer errors
 - [x] Remove unnecesary transactions
-- [ ] Custom errors for domain / service layer (include default error)
-- [ ] Logging for domain / service layer errors
+- [x] Custom errors for domain / service layer (include default error)
+- [x] Logging for domain / service layer errors
 - [ ] Validation of JSON requests in controllers (mandatory fields, format, etc)
 - [x] Expand update methods for services (decompress)
 - [x] Documentation in comments for repositories (errors, optional args, etc)
-- [ ] Documentation in comments for services (errors, optional args, etc)
+- [x] Documentation in comments for services (errors, optional args, etc)
 - [ ] Remake tests for repositories
 - [ ] Repository level validation for tests
 - [ ] Make tests for services
