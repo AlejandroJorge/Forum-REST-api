@@ -76,9 +76,21 @@ func (repo sqliteCommentRepository) Delete(id uint) error {
 	DELETE FROM Comment
 	WHERE Comment_ID = ?
 	`
-	_, err := db.Exec(query, id)
+	res, err := db.Exec(query, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
