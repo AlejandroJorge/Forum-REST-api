@@ -2,45 +2,84 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
-	"github.com/gorilla/mux"
+	"github.com/AlejandroJorge/forum-rest-api/service"
 )
 
-type commentController struct {
+type CommentController interface {
+	Create(w http.ResponseWriter, r *http.Request)
+
+	Delete(w http.ResponseWriter, r *http.Request)
+
+	UpdateContent(w http.ResponseWriter, r *http.Request)
+
+	GetByID(w http.ResponseWriter, r *http.Request)
+
+	GetByPost(w http.ResponseWriter, r *http.Request)
+
+	GetByUser(w http.ResponseWriter, r *http.Request)
+
+	AddLike(w http.ResponseWriter, r *http.Request)
+
+	DeleteLike(w http.ResponseWriter, r *http.Request)
+}
+
+type commentControllerImpl struct {
 	serv domain.CommentService
 }
 
-func NewCommentController(serv domain.CommentService) commentController {
-	return commentController{serv: serv}
+func (con commentControllerImpl) AddLike(w http.ResponseWriter, r *http.Request) {
+	var addLikeReq struct {
+		UserID uint `json:"UserID"`
+		PostID uint `json:"PostID"`
+	}
+	err := delivery.ReadJSONRequest(r, &addLikeReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.PostID)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusNotFound, "User or Post doesn't exist")
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Like created successfully")
 }
 
-func (con commentController) Create(w http.ResponseWriter, r *http.Request) {
+func (con commentControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	var createReq struct {
 		UserID  uint   `json:"UserID"`
-		PostID  uint   `json:"PostID"`
+		PostID  uint   `json:"PostId"`
 		Content string `json:"Content"`
 	}
 	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
-		delivery.WriteJSONResponse(w, http.StatusInternalServerError, "Couldn't create comment")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	id, err := con.serv.CreateNew(struct {
-		UserID  uint
-		PostID  uint
-		Content string
-	}{
-		UserID:  createReq.UserID,
-		PostID:  createReq.PostID,
-		Content: createReq.Content,
-	})
+	id, err := con.serv.Create(createReq.UserID, createReq.PostID, createReq.Content)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusBadRequest, "User or Post doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create comment")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -52,98 +91,134 @@ func (con commentController) Create(w http.ResponseWriter, r *http.Request) {
 	delivery.WriteJSONResponse(w, http.StatusCreated, response)
 }
 
-func (con commentController) GetByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+func (con commentControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusOK, "Invalid ID provided")
 		return
 	}
 
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	err = con.serv.Delete(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Comment doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	comment, err := con.serv.GetByID(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There's no comment with this ID")
+	delivery.WriteResponse(w, http.StatusOK, "Post deleted successfully")
+}
+
+func (con commentControllerImpl) DeleteLike(w http.ResponseWriter, r *http.Request) {
+	var delLikeReq struct {
+		UserID uint `json:"UserID"`
+		PostID uint `json:"PostID"`
+	}
+	err := delivery.ReadJSONRequest(r, &delLikeReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.DeleteLike(delLikeReq.UserID, delLikeReq.PostID)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Like doesn't exist")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve comment")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Like deleted successfully")
+}
+
+func (con commentControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusOK, "Invalid ID provided")
+		return
+	}
+
+	comment, err := con.serv.GetByID(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Comment doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteJSONResponse(w, http.StatusOK, comment)
 }
 
-func (con commentController) GetByUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+func (con commentControllerImpl) GetByPost(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusOK, "Invalid ID provided")
 		return
 	}
 
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+	posts, err := con.serv.GetByPost(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
 	}
-
-	posts, err := con.serv.GetByUser(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There are no comments for this user")
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No posts found")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve comments")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteJSONResponse(w, http.StatusOK, posts)
 }
 
-func (con commentController) GetByPost(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+func (con commentControllerImpl) GetByUser(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusOK, "Invalid ID provided")
 		return
 	}
 
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+	posts, err := con.serv.GetByUser(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
 	}
-
-	posts, err := con.serv.GetByPost(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There are no comments for this post")
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No posts found")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve comments")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteJSONResponse(w, http.StatusOK, posts)
 }
 
-func (con commentController) Update(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func (con commentControllerImpl) UpdateContent(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
 		return
 	}
 
@@ -156,68 +231,23 @@ func (con commentController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	con.serv.Update(uint(id), updateReq.Content)
+	err = con.serv.Update(id, updateReq.Content)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Comment doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Comment updated successfully")
 }
 
-func (con commentController) CreateLike(w http.ResponseWriter, r *http.Request) {
-	var createLikeReq struct {
-		UserID    uint `json:"UserID"`
-		CommentID uint `json:"CommentID"`
-	}
-	err := delivery.ReadJSONRequest(r, &createLikeReq)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
-	}
-
-	err = con.serv.AddLike(createLikeReq.UserID, createLikeReq.CommentID)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create like")
-		return
-	}
-
-	delivery.WriteResponse(w, http.StatusOK, "Like created successfully")
-}
-
-func (con commentController) DeleteLike(w http.ResponseWriter, r *http.Request) {
-	var deleteLikeReq struct {
-		UserID    uint `json:"UserID"`
-		CommentID uint `json:"CommentID"`
-	}
-	err := delivery.ReadJSONRequest(r, &deleteLikeReq)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
-	}
-
-	err = con.serv.DeleteLike(deleteLikeReq.UserID, deleteLikeReq.CommentID)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete like")
-		return
-	}
-
-	delivery.WriteResponse(w, http.StatusOK, "Like deleted successfully")
-}
-
-func (con commentController) Delete(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	err = con.serv.Delete(uint(id))
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete comment")
-		return
-	}
-
-	delivery.WriteResponse(w, http.StatusOK, "Comment deleted successfully")
+func NewCommentController(serv domain.CommentService) CommentController {
+	return commentControllerImpl{serv: serv}
 }

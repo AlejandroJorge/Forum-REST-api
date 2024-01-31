@@ -59,6 +59,7 @@ Where is development going right now
 - [x] Documentation in comments for repositories (errors, optional args, etc)
 - [x] Documentation in comments for services (errors, optional args, etc)
 - [ ] Refactor controllers with error handling
+- [ ] Implement auth for every necessary operation
 - [ ] Remake tests for repositories
 - [ ] Repository level validation for tests
 - [ ] Make tests for services

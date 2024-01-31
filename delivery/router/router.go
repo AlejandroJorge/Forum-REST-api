@@ -151,7 +151,6 @@ func initializePostRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
-/*
 func initializeCommentRoutes(router *mux.Router) {
 	repository := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 	service := service.NewCommentService(repository)
@@ -170,10 +169,10 @@ func initializeCommentRoutes(router *mux.Router) {
 		controller.GetByPost).Methods("GET")
 
 	router.HandleFunc("/comments/{id:[0-9]+}",
-		controller.Update).Methods("PUT")
+		controller.UpdateContent).Methods("PUT")
 
 	router.HandleFunc("/comments/likes",
-		controller.CreateLike).Methods("POST")
+		controller.AddLike).Methods("POST")
 
 	router.HandleFunc("/comments/likes",
 		controller.DeleteLike).Methods("DELETE")
@@ -181,4 +180,3 @@ func initializeCommentRoutes(router *mux.Router) {
 	router.HandleFunc("/comments/{id:[0-9]+}",
 		controller.Delete).Methods("DELETE")
 }
-*/
