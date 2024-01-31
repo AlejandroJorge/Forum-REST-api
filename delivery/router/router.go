@@ -31,7 +31,7 @@ func initializeRouter(router *mux.Router) {
 	initializeUserRoutes(apiRouter)
 	initializeProfileRoutes(apiRouter)
 	initializePostRoutes(apiRouter)
-	//initializeCommentRoutes(apiRouter)
+	initializeCommentRoutes(apiRouter)
 }
 
 func initializeUserRoutes(router *mux.Router) {
@@ -165,7 +165,7 @@ func initializeCommentRoutes(router *mux.Router) {
 	router.HandleFunc("/users/{id:[0-9]+}/comments",
 		controller.GetByUser).Methods("GET")
 
-	router.HandleFunc("/posts/{id:[0-9]+/comments}",
+	router.HandleFunc("/posts/{id:[0-9]+}/comments",
 		controller.GetByPost).Methods("GET")
 
 	router.HandleFunc("/comments/{id:[0-9]+}",

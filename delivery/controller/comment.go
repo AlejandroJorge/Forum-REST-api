@@ -32,8 +32,8 @@ type commentControllerImpl struct {
 
 func (con commentControllerImpl) AddLike(w http.ResponseWriter, r *http.Request) {
 	var addLikeReq struct {
-		UserID uint `json:"UserID"`
-		PostID uint `json:"PostID"`
+		UserID    uint `json:"UserID"`
+		CommentID uint `json:"CommentID"`
 	}
 	err := delivery.ReadJSONRequest(r, &addLikeReq)
 	if err != nil {
@@ -41,7 +41,7 @@ func (con commentControllerImpl) AddLike(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.PostID)
+	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.CommentID)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
