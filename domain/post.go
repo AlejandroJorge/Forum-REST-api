@@ -62,29 +62,42 @@ type PostRepository interface {
 }
 
 type PostService interface {
+	// Returns the ID of the created post, can return ErrIncorrectParameters, ErrDependencyNotSatisfied, ErrAlreadyExisting
 	Create(ownerID uint, title, description, content string) (uint, error)
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Delete(id uint) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity,
 	UpdateTitle(id uint, title string) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity,
 	UpdateDescription(id uint, description string) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity,
 	UpdateContent(id uint, content string) error
 
+	// Returns a valid post, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByID(id uint) (Post, error)
 
+	// Returns a slice of valid posts, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByUser(userId uint) ([]Post, error)
 
+	// Returns a slice of valid posts, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetPopularToday() ([]Post, error)
 
+	// Returns a slice of valid posts, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetPopularLastWeek() ([]Post, error)
 
+	// Returns a slice of valid posts, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetPopularLastMonth() ([]Post, error)
 
+	// Returns a slice of valid posts, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetPopularAllTime() ([]Post, error)
 
+	// Can return ErIncorrectParameters, ErrAlreadyExisting, ErrDependencyNotSatisfied
 	AddLike(userId uint, postId uint) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	DeleteLike(userId uint, postId uint) error
 }
