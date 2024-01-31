@@ -13,7 +13,7 @@ type sqliteProfileRepository struct {
 	db *sql.DB
 }
 
-// Can return ErrRepeatedEntity
+// Can return ErrRepeatedEntity, ErrNoMatchingDependency
 func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) error {
 	db := repo.db
 
@@ -23,6 +23,10 @@ func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) 
 	`
 	_, err := db.Exec(query, followerId, followedId, time.Now().Unix())
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return ErrNoMatchingDependency
+		}
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
 			logging.LogRepositoryError(ErrRepeatedEntity)
 			return ErrRepeatedEntity
@@ -259,6 +263,7 @@ func (repo sqliteProfileRepository) Create(userID uint, tagName, displayName str
 	return uint(newId), nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) Delete(id uint) error {
 	db := repo.db
 

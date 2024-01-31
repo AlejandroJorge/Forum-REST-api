@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -13,6 +13,7 @@ type sqlitePostRepository struct {
 	db *sql.DB
 }
 
+// Can return ErrRepeatedEntity, ErrNoMatchingDependency
 func (repo sqlitePostRepository) AddLike(userId uint, postId uint) error {
 	db := repo.db
 
@@ -21,13 +22,25 @@ func (repo sqlitePostRepository) AddLike(userId uint, postId uint) error {
 	VALUES (?,?)
 	`
 	_, err := db.Exec(query, userId, postId)
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return ErrNoMatchingDependency
+		}
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return ErrRepeatedEntity
+		}
+	}
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
 	db := repo.db
 
@@ -35,39 +48,60 @@ func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
 	DELETE FROM Post_Likings
 	WHERE Liker_ID = ? AND Post_ID = ?
 	`
-	_, err := db.Exec(query, userId, postId)
+	res, err := db.Exec(query, userId, postId)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
-func (repo sqlitePostRepository) CreateNew(post domain.Post) (uint, error) {
+// Returns the id of the created post and can return ErrNoMatchingDependency, ErrRepeatedEntity
+func (repo sqlitePostRepository) CreateNew(ownerID uint, title, description, content string) (uint, error) {
 	db := repo.db
 
 	query := `
   INSERT INTO Post(Title, Description, Content, Creation_Date, Owner_ID)
   VALUES (?,?,?,?,?)
   `
-	res, err := db.Exec(query, post.Title, post.Description, post.Content, time.Now().Unix(), post.OwnerID)
+	res, err := db.Exec(query, title, description, content, time.Now().Unix(), ownerID)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
-			err = util.ErrNoCorrespondingProfile
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return 0, ErrNoMatchingDependency
+		}
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return 0, ErrRepeatedEntity
 		}
 	}
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
 	newId, err := res.LastInsertId()
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
 	return uint(newId), nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqlitePostRepository) Delete(id uint) error {
 	db := repo.db
 
@@ -75,14 +109,27 @@ func (repo sqlitePostRepository) Delete(id uint) error {
 	DELETE FROM Post
 	WHERE Post_ID = ?
 	`
-	_, err := db.Exec(query, id)
+	res, err := db.Exec(query, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Returns a valid profile and can return ErrEmptySelection
 func (repo sqlitePostRepository) GetByID(id uint) (domain.Post, error) {
 	db := repo.db
 
@@ -97,17 +144,19 @@ func (repo sqlitePostRepository) GetByID(id uint) (domain.Post, error) {
 	`
 	row := db.QueryRow(query, id)
 	err := row.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = util.ErrEmptySelection
-		}
-		return domain.Post{}, err
+	if err == sql.ErrNoRows {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return domain.Post{}, ErrEmptySelection
 	}
-	post.CreationDate = time.Unix(creationDate, 0)
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return domain.Post{}, ErrUnknown
+	}
 
 	return post, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 	db := repo.db
 
@@ -121,7 +170,8 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 	`
 	rows, err := db.Query(query, userId)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
@@ -130,19 +180,23 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 
 		err = rows.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				err = util.ErrEmptySelection
-			}
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
 		post.CreationDate = time.Unix(creationDate, 0)
 		posts = append(posts, post)
 	}
 
+	if len(posts) == 0 {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
+	}
+
 	return posts, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) ([]domain.Post, error) {
 	db := repo.db
 
@@ -159,7 +213,8 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 	`
 	rows, err := db.Query(query, momentInteger, amount)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
@@ -167,7 +222,8 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 		var creationDate int64
 		err = rows.Scan(&post.PostID, &post.OwnerID, &post.Title, &post.Description, &post.Content, &creationDate, &post.Likes)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
 		post.CreationDate = time.Unix(creationDate, 0)
@@ -175,12 +231,14 @@ func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) 
 	}
 
 	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
 	return posts, nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqlitePostRepository) UpdateContent(id uint, newContent string) error {
 	db := repo.db
 
@@ -189,14 +247,27 @@ func (repo sqlitePostRepository) UpdateContent(id uint, newContent string) error
 	SET	Content = ?
 	WHERE Post_ID = ?
 	`
-	_, err := db.Exec(query, newContent, id)
+	res, err := db.Exec(query, newContent, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqlitePostRepository) UpdateDescription(id uint, newDescription string) error {
 	db := repo.db
 
@@ -205,14 +276,27 @@ func (repo sqlitePostRepository) UpdateDescription(id uint, newDescription strin
 	SET	Description = ?
 	WHERE Post_ID = ?
 	`
-	_, err := db.Exec(query, newDescription, id)
+	res, err := db.Exec(query, newDescription, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqlitePostRepository) UpdateTitle(id uint, newTitle string) error {
 	db := repo.db
 
@@ -221,9 +305,21 @@ func (repo sqlitePostRepository) UpdateTitle(id uint, newTitle string) error {
 	SET	Title = ?
 	WHERE Post_ID = ?
 	`
-	_, err := db.Exec(query, newTitle, id)
+	res, err := db.Exec(query, newTitle, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
