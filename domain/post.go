@@ -36,7 +36,7 @@ type PostRepository interface {
 	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
-	// Can return ErrNoRowsAffected
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity,
 	UpdateTitle(id uint, newTitle string) error
 
 	// Can return ErrNoRowsAffected
@@ -68,7 +68,7 @@ type PostService interface {
 	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Delete(id uint) error
 
-	// Can return ErrIncorrectParameters, ErrNotExistingEntity,
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity, ErrAlreadyExisting
 	UpdateTitle(id uint, title string) error
 
 	// Can return ErrIncorrectParameters, ErrNotExistingEntity,

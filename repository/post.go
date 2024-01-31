@@ -296,7 +296,7 @@ func (repo sqlitePostRepository) UpdateDescription(id uint, newDescription strin
 	return nil
 }
 
-// Can return ErrNoRowsAffected
+// Can return ErrNoRowsAffected, ErrRepeatedEntity
 func (repo sqlitePostRepository) UpdateTitle(id uint, newTitle string) error {
 	db := repo.db
 
@@ -306,6 +306,12 @@ func (repo sqlitePostRepository) UpdateTitle(id uint, newTitle string) error {
 	WHERE Post_ID = ?
 	`
 	res, err := db.Exec(query, newTitle, id)
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return ErrRepeatedEntity
+		}
+	}
 	if err != nil {
 		logging.LogUnexpectedRepositoryError(err)
 		return ErrUnknown

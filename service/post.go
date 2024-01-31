@@ -200,7 +200,7 @@ func (serv postServiceImpl) GetPopularToday() ([]domain.Post, error) {
 	return posts, nil
 }
 
-// Can return ErrIncorrectParameters, ErrNotExistingEntity,
+// Can return ErrIncorrectParameters, ErrNotExistingEntity, ErrAlreadyExisting
 func (serv postServiceImpl) UpdateTitle(id uint, title string) error {
 	if id == 0 || title == "" {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -211,6 +211,10 @@ func (serv postServiceImpl) UpdateTitle(id uint, title string) error {
 	if err == repository.ErrNoRowsAffected {
 		logging.LogDomainError(ErrNotExistingEntity)
 		return ErrNotExistingEntity
+	}
+	if err == repository.ErrRepeatedEntity {
+		logging.LogDomainError(ErrAlreadyExisting)
+		return ErrAlreadyExisting
 	}
 	if err != nil {
 		logging.LogUnexpectedDomainError(err)

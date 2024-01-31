@@ -1,201 +1,46 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
-	"github.com/gorilla/mux"
+	"github.com/AlejandroJorge/forum-rest-api/service"
 )
 
-type postController struct {
+type PostController interface {
+	Create(w http.ResponseWriter, r *http.Request)
+
+	Delete(w http.ResponseWriter, r *http.Request)
+
+	UpdateTitle(w http.ResponseWriter, r *http.Request)
+
+	UpdateDescription(w http.ResponseWriter, r *http.Request)
+
+	UpdateContent(w http.ResponseWriter, r *http.Request)
+
+	GetByID(w http.ResponseWriter, r *http.Request)
+
+	GetByUser(w http.ResponseWriter, r *http.Request)
+
+	GetPopularToday(w http.ResponseWriter, r *http.Request)
+
+	GetPopularLastWeek(w http.ResponseWriter, r *http.Request)
+
+	GetPopularLastMonth(w http.ResponseWriter, r *http.Request)
+
+	GetPopularAllTime(w http.ResponseWriter, r *http.Request)
+
+	AddLike(w http.ResponseWriter, r *http.Request)
+
+	DeleteLike(w http.ResponseWriter, r *http.Request)
+}
+
+type postControllerImpl struct {
 	serv domain.PostService
 }
 
-func NewPostController(serv domain.PostService) postController {
-	return postController{serv: serv}
-}
-
-func (con postController) GetByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	post, err := con.serv.GetByID(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, post)
-}
-
-func (con postController) GetByUserID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	post, err := con.serv.GetByUser(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There's no post with this ID")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve post")
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, post)
-}
-
-func (con postController) GetPopular(w http.ResponseWriter, r *http.Request) {
-	var getPopularReq struct {
-		Interval string `json:"Interval"`
-	}
-	err := delivery.ReadJSONRequest(r, &getPopularReq)
-	if err != nil {
-		delivery.WriteJSONResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
-	}
-
-	var getPopular func() ([]domain.Post, error)
-	switch getPopularReq.Interval {
-	case "Ever":
-		getPopular = con.serv.GetPopularAllTime
-		break
-	case "Month":
-		getPopular = con.serv.GetPopularLastMonth
-		break
-	case "Week":
-		getPopular = con.serv.GetPopularLastWeek
-		break
-	case "Day":
-		getPopular = con.serv.GetPopularToday
-		break
-	default:
-		delivery.WriteResponse(w, http.StatusBadRequest, fmt.Sprintf("Incorrect option: %s", getPopularReq.Interval))
-		return
-	}
-
-	posts, err := getPopular()
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "No posts matched criteria")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve posts")
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, posts)
-}
-
-func (con postController) Create(w http.ResponseWriter, r *http.Request) {
-	var createReq struct {
-		OwnerID     uint   `json:"OwnerID"`
-		Title       string `json:"Title"`
-		Description string `json:"Description"`
-		Content     string `json:"Content"`
-	}
-	err := delivery.ReadJSONRequest(r, &createReq)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
-	}
-
-	id, err := con.serv.CreateNew(struct {
-		OwnerID     uint
-		Title       string
-		Description string
-		Content     string
-	}{
-		OwnerID:     createReq.OwnerID,
-		Title:       createReq.Title,
-		Description: createReq.Description,
-		Content:     createReq.Content,
-	})
-	if err == util.ErrNoCorrespondingUser {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Owner doesn't exist")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create post")
-		return
-	}
-
-	response := struct {
-		ID uint `json:"ID"`
-	}{
-		ID: id,
-	}
-	delivery.WriteJSONResponse(w, http.StatusOK, response)
-}
-
-func (con postController) Update(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	var updateReq struct {
-		UpdatedTitle       string `json:"Title"`
-		UpdatedDescription string `json:"Description"`
-		UpdatedContent     string `json:"Content"`
-	}
-	err = delivery.ReadJSONRequest(r, &updateReq)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
-	}
-
-	err = con.serv.Update(uint(id), struct {
-		UpdatedTitle       string
-		UpdatedDescription string
-		UpdatedContent     string
-	}{
-		UpdatedTitle:       updateReq.UpdatedTitle,
-		UpdatedDescription: updateReq.UpdatedDescription,
-		UpdatedContent:     updateReq.UpdatedContent,
-	})
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't update")
-		return
-	}
-
-	delivery.WriteResponse(w, http.StatusOK, "Updated post successfully")
-}
-
-func (con postController) AddLike(w http.ResponseWriter, r *http.Request) {
+func (con postControllerImpl) AddLike(w http.ResponseWriter, r *http.Request) {
 	var addLikeReq struct {
 		UserID uint `json:"UserID"`
 		PostID uint `json:"PostID"`
@@ -207,53 +52,324 @@ func (con postController) AddLike(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.PostID)
+	if err == service.ErrAlreadyExisting {
+		delivery.WriteResponse(w, http.StatusConflict, "Like already exists")
+		return
+	}
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided ")
+		return
+	}
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusNotFound, "User or Post doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create like")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	delivery.WriteResponse(w, http.StatusOK, "Like created successfully")
+	delivery.WriteResponse(w, http.StatusCreated, "Like created successfully")
 }
 
-func (con postController) DeleteLike(w http.ResponseWriter, r *http.Request) {
-	var deleteLikeReq struct {
-		UserID uint `json:"UserID"`
-		PostID uint `json:"PostID"`
+func (con postControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
+	var createReq struct {
+		UserID      uint   `json:"UserID"`
+		Title       string `json:"Title"`
+		Description string `json:"Description"`
+		Content     string `json:"Content"`
 	}
-	err := delivery.ReadJSONRequest(r, &deleteLikeReq)
+	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	err = con.serv.DeleteLike(deleteLikeReq.UserID, deleteLikeReq.PostID)
+	id, err := con.serv.Create(createReq.UserID, createReq.Title, createReq.Description, createReq.Content)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided parameters")
+		return
+	}
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusNotFound, "Unexistent user")
+		return
+	}
+	if err == service.ErrAlreadyExisting {
+		delivery.WriteResponse(w, http.StatusConflict, "Repeated title")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete like")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	response := struct {
+		ID uint `json:"ID"`
+	}{
+		ID: id,
+	}
+	delivery.WriteJSONResponse(w, http.StatusCreated, response)
+}
+
+func (con postControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
+		return
+	}
+
+	err = con.serv.Delete(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Post doens't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Post deleted successfully")
+}
+
+func (con postControllerImpl) DeleteLike(w http.ResponseWriter, r *http.Request) {
+	var delLikeReq struct {
+		UserID uint `json:"UserID"`
+		PostID uint `json:"PostID"`
+	}
+	err := delivery.ReadJSONRequest(r, &delLikeReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.DeleteLike(delLikeReq.UserID, delLikeReq.PostID)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Like doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteResponse(w, http.StatusOK, "Like deleted successfully")
 }
 
-func (con postController) Delete(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func (con postControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided ")
 		return
 	}
 
-	err = con.serv.Delete(uint(id))
+	post, err := con.serv.GetByID(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Post doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete post")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	delivery.WriteResponse(w, http.StatusOK, "Post deleted successfully")
+	delivery.WriteJSONResponse(w, http.StatusOK, post)
+}
+
+func (con postControllerImpl) GetByUser(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
+		return
+	}
+
+	posts, err := con.serv.GetByUser(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No post found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
+}
+
+func (con postControllerImpl) GetPopularAllTime(w http.ResponseWriter, r *http.Request) {
+	posts, err := con.serv.GetPopularAllTime()
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No post found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
+}
+
+func (con postControllerImpl) GetPopularLastMonth(w http.ResponseWriter, r *http.Request) {
+	posts, err := con.serv.GetPopularLastMonth()
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No post found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
+}
+
+func (con postControllerImpl) GetPopularLastWeek(w http.ResponseWriter, r *http.Request) {
+	posts, err := con.serv.GetPopularLastWeek()
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No post found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
+}
+
+func (con postControllerImpl) GetPopularToday(w http.ResponseWriter, r *http.Request) {
+	posts, err := con.serv.GetPopularToday()
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No post found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, posts)
+}
+
+func (con postControllerImpl) UpdateContent(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
+		return
+	}
+
+	var updateReq struct {
+		Content string `json:"Content"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.UpdateContent(id, updateReq.Content)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Post doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Post updated succesfully")
+}
+
+func (con postControllerImpl) UpdateDescription(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
+		return
+	}
+
+	var updateReq struct {
+		Description string `json:"Description"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.UpdateDescription(id, updateReq.Description)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Post doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Post updated succesfully")
+}
+
+func (con postControllerImpl) UpdateTitle(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
+		return
+	}
+
+	var updateReq struct {
+		Title string `json:"Title"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.UpdateTitle(id, updateReq.Title)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Post doesn't exist")
+		return
+	}
+	if err == service.ErrAlreadyExisting {
+		delivery.WriteResponse(w, http.StatusConflict, "Repeated title")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Post updated succesfully")
+}
+
+func NewPostController(serv domain.PostService) PostController {
+	return postControllerImpl{serv: serv}
 }

@@ -106,7 +106,6 @@ func initializeProfileRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
-/*
 func initializePostRoutes(router *mux.Router) {
 	repository := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 	service := service.NewPostService(repository)
@@ -115,17 +114,32 @@ func initializePostRoutes(router *mux.Router) {
 	router.HandleFunc("/posts",
 		controller.Create).Methods("POST")
 
-	router.HandleFunc("/posts",
-		controller.GetPopular).Methods("GET")
+	router.HandleFunc("/posts/today",
+		controller.GetPopularToday).Methods("GET")
+
+	router.HandleFunc("/posts/week",
+		controller.GetPopularLastWeek).Methods("GET")
+
+	router.HandleFunc("/posts/month",
+		controller.GetPopularLastMonth).Methods("GET")
+
+	router.HandleFunc("/posts/alltime",
+		controller.GetPopularAllTime).Methods("GET")
 
 	router.HandleFunc("/posts/{id:[0-9]+}",
 		controller.GetByID).Methods("GET")
 
 	router.HandleFunc("/users/{id:[0-9]+}/posts",
-		controller.GetByUserID).Methods("GET")
+		controller.GetByUser).Methods("GET")
 
-	router.HandleFunc("/posts/{id:[0-9]+}",
-		controller.Update).Methods("PUT")
+	router.HandleFunc("/posts/{id:[0-9]+}/title",
+		controller.UpdateTitle).Methods("PUT")
+
+	router.HandleFunc("/posts/{id:[0-9]+}/description",
+		controller.UpdateDescription).Methods("PUT")
+
+	router.HandleFunc("/posts/{id:[0-9]+}/content",
+		controller.UpdateContent).Methods("PUT")
 
 	router.HandleFunc("/posts/likes",
 		controller.AddLike).Methods("POST")
@@ -137,6 +151,7 @@ func initializePostRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
+/*
 func initializeCommentRoutes(router *mux.Router) {
 	repository := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
 	service := service.NewCommentService(repository)
