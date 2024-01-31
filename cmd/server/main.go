@@ -11,9 +11,11 @@ import (
 
 func main() {
 	config.InitializeAll()
-
 	logging.LogSetup()
-	fmt.Printf("Listening on http://localhost:%d", config.GetParams().Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", config.GetParams().Port), router.AppRouter())
+
+	port := config.GetParams().Port
+	router := router.AppRouter(config.SQLiteDatabase())
+
+	http.ListenAndServe(fmt.Sprintf(":%d", port), router)
 
 }

@@ -1,9 +1,9 @@
 package router
 
 import (
+	"database/sql"
 	"net/http"
 
-	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery/controller"
 	"github.com/AlejandroJorge/forum-rest-api/delivery/middleware"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
@@ -13,29 +13,29 @@ import (
 
 var mainRouter http.Handler
 
-func AppRouter() http.Handler {
+func AppRouter(db *sql.DB) http.Handler {
 	if mainRouter == nil {
 		newRouter := mux.NewRouter()
-		initializeRouter(newRouter)
+		initializeRouter(newRouter, db)
 		mainRouter = newRouter
 	}
 
 	return mainRouter
 }
 
-func initializeRouter(router *mux.Router) {
+func initializeRouter(router *mux.Router, db *sql.DB) {
 	router.Use(middleware.Logger)
 
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
 
-	initializeUserRoutes(apiRouter)
-	initializeProfileRoutes(apiRouter)
-	initializePostRoutes(apiRouter)
-	initializeCommentRoutes(apiRouter)
+	initializeUserRoutes(apiRouter, db)
+	initializeProfileRoutes(apiRouter, db)
+	initializePostRoutes(apiRouter, db)
+	initializeCommentRoutes(apiRouter, db)
 }
 
-func initializeUserRoutes(router *mux.Router) {
-	repository := repository.NewSQLiteUserRepository(config.SQLiteDatabase())
+func initializeUserRoutes(router *mux.Router, db *sql.DB) {
+	repository := repository.NewSQLiteUserRepository(db)
 	service := service.NewUserService(repository)
 	controller := controller.NewUserController(service)
 
@@ -58,8 +58,8 @@ func initializeUserRoutes(router *mux.Router) {
 		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
 
-func initializeProfileRoutes(router *mux.Router) {
-	repository := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
+func initializeProfileRoutes(router *mux.Router, db *sql.DB) {
+	repository := repository.NewSQLiteProfileRepository(db)
 	service := service.NewProfileService(repository)
 	controller := controller.NewProfileController(service)
 
@@ -106,8 +106,8 @@ func initializeProfileRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
-func initializePostRoutes(router *mux.Router) {
-	repository := repository.NewSQLitePostRepository(config.SQLiteDatabase())
+func initializePostRoutes(router *mux.Router, db *sql.DB) {
+	repository := repository.NewSQLitePostRepository(db)
 	service := service.NewPostService(repository)
 	controller := controller.NewPostController(service)
 
@@ -151,8 +151,8 @@ func initializePostRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
-func initializeCommentRoutes(router *mux.Router) {
-	repository := repository.NewSQLiteCommentRepository(config.SQLiteDatabase())
+func initializeCommentRoutes(router *mux.Router, db *sql.DB) {
+	repository := repository.NewSQLiteCommentRepository(db)
 	service := service.NewCommentService(repository)
 	controller := controller.NewCommentController(service)
 
