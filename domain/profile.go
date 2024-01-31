@@ -23,32 +23,46 @@ func (p Profile) Validate() bool {
 }
 
 type ProfileRepository interface {
+	// Returns the id of the created profile, can return ErrNoMatchingDependency, ErrRepeatedEntity
 	Create(userID uint, tagName, displayName string) (uint, error)
 
+	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
+	// Can return ErrNoRowsAffected
 	UpdateTagName(id uint, newTagName string) error
 
+	// Can return ErrNoRowsAffected
 	UpdateDisplayName(id uint, newDisplayName string) error
 
+	// Can return ErrNoRowsAffected
 	UpdatePicturePath(id uint, newPicturePath string) error
 
+	// Can return ErrNoRowsAffected
 	UpdateBackgroundPath(id uint, newBackgroundPath string) error
 
+	// Returns a valid profile and can return ErrEmptySelection
 	GetByUserID(userId uint) (Profile, error)
 
+	// Returns a valid profile and can return ErrEmptySelection
 	GetByTagName(tagName string) (Profile, error)
 
+	// Returns an slice of valid profiles, can return ErrEmptySelection
 	GetFollowersByID(userId uint) ([]Profile, error)
 
+	// Returns an slice of valid profiles, can return ErrEmptySelection
 	GetFollowersByTagName(tagName string) ([]Profile, error)
 
+	// Returns an slice of valid profiles, can return ErrEmptySelection
 	GetFollowsByID(userId uint) ([]Profile, error)
 
+	// Returns an slice of valid profiles, can return ErrEmptySelection
 	GetFollowsByTagName(tagName string) ([]Profile, error)
 
+	// Can return ErrRepeatedEntity, ErrNoMatchingDependency
 	AddFollow(followerId uint, followedId uint) error
 
+	// Can return ErrNoRowsAffected
 	DeleteFollow(followerId uint, followedId uint) error
 }
 

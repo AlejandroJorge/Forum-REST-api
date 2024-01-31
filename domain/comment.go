@@ -22,20 +22,28 @@ func (c Comment) Validate() bool {
 }
 
 type CommentRepository interface {
+	// Returns the id of the created comment, can return ErrNoMatchingDependency, ErrRepeatedEntity
 	Create(postID, userID uint, content string) (uint, error)
 
+	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
+	// Can return ErrNoRowsAffected
 	UpdateContent(id uint, newContent string) error
 
+	// Returns a valid comment and can return ErrEmptySelection
 	GetByID(id uint) (Comment, error)
 
+	// Returns an slice of valid comments, can return ErrEmptySelection
 	GetByPost(postID uint) ([]Comment, error)
 
+	// Returns an slice of valid comments, can return ErrEmptySelection
 	GetByUser(userID uint) ([]Comment, error)
 
+	// Can return ErrNoMatchingDependency
 	AddLike(userId uint, commentId uint) error
 
+	// Can return ErrNoRowsAffected
 	DeleteLike(userId uint, commentId uint) error
 }
 

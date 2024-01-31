@@ -14,7 +14,7 @@ type sqliteUserRepository struct {
 	db *sql.DB
 }
 
-// Returns the User_ID of the created user and can return ErrRepeatedEntity
+// Returns the ID of the created user and can return ErrRepeatedEntity
 func (repo sqliteUserRepository) Create(email, hashedPassword string) (uint, error) {
 	db := repo.db
 

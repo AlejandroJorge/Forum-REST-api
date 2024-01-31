@@ -35,7 +35,7 @@ func (repo sqliteCommentRepository) AddLike(userId uint, commentId uint) error {
 	return nil
 }
 
-// Can return ErrNoMatchingDependency, ErrRepeatedEntity
+// Returns the id of the created comment, can return ErrNoMatchingDependency, ErrRepeatedEntity
 func (repo sqliteCommentRepository) Create(postID, userID uint, content string) (uint, error) {
 	db := repo.db
 
@@ -138,7 +138,7 @@ func (repo sqliteCommentRepository) GetByID(id uint) (domain.Comment, error) {
 	return comment, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid comments, can return ErrEmptySelection
 func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, error) {
 	db := repo.db
 
@@ -177,7 +177,7 @@ func (repo sqliteCommentRepository) GetByPost(postID uint) ([]domain.Comment, er
 	return comments, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid comments, can return ErrEmptySelection
 func (repo sqliteCommentRepository) GetByUser(userID uint) ([]domain.Comment, error) {
 	db := repo.db
 

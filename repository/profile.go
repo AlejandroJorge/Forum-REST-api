@@ -68,7 +68,7 @@ func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uin
 	return nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid profiles, can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Profile, error) {
 	db := repo.db
 
@@ -108,7 +108,7 @@ func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Prof
 	return profiles, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid profiles, can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
 	db := repo.db
 
@@ -149,7 +149,7 @@ func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]dom
 	return profiles, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid profiles, can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profile, error) {
 	db := repo.db
 
@@ -189,7 +189,7 @@ func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profil
 	return profiles, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid profiles, can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
 	db := repo.db
 
@@ -230,7 +230,7 @@ func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domai
 	return profiles, nil
 }
 
-// Returns the id of the created profile and can return ErrNoMatchingDependency, ErrRepeatedEntity
+// Returns the id of the created profile, can return ErrNoMatchingDependency, ErrRepeatedEntity
 func (repo sqliteProfileRepository) Create(userID uint, tagName, displayName string) (uint, error) {
 	db := repo.db
 

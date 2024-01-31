@@ -26,16 +26,22 @@ func (u User) Validate() bool {
 }
 
 type UserRepository interface {
+	// Returns the ID of the created user and can return ErrRepeatedEntity
 	Create(email, hashedPassword string) (uint, error)
 
+	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
+	// Can return ErrNoRowsAffected
 	UpdateEmail(id uint, newEmail string) error
 
+	// Can return ErrNoRowsAffected
 	UpdateHashedPassword(id uint, newHashedPassword string) error
 
+	// Returns a valid user and can return ErrEmptySelection
 	GetByID(id uint) (User, error)
 
+	// Returns a valid user and can return ErrEmptySelection
 	GetByEmail(email string) (User, error)
 }
 

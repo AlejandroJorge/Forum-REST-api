@@ -30,24 +30,34 @@ func (p Post) Validate() bool {
 }
 
 type PostRepository interface {
+	// Returns the id of the created post, can return ErrNoMatchingDependency, ErrRepeatedEntity
 	Create(ownerID uint, title, description, content string) (uint, error)
 
+	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
+	// Can return ErrNoRowsAffected
 	UpdateTitle(id uint, newTitle string) error
 
+	// Can return ErrNoRowsAffected
 	UpdateDescription(id uint, newDescription string) error
 
+	// Can return ErrNoRowsAffected
 	UpdateContent(id uint, newContent string) error
 
+	// Returns a valid profile and can return ErrEmptySelection
 	GetByID(id uint) (Post, error)
 
+	// Returns an slice of valid posts, can return ErrEmptySelection
 	GetByUser(userId uint) ([]Post, error)
 
+	// Returns an slice of valid posts, can return ErrEmptySelection
 	GetPopularAfter(moment time.Time, amount uint) ([]Post, error)
 
+	// Can return ErrRepeatedEntity, ErrNoMatchingDependency
 	AddLike(userId uint, postId uint) error
 
+	// Can return ErrNoRowsAffected
 	DeleteLike(userId uint, postId uint) error
 }
 

@@ -68,7 +68,7 @@ func (repo sqlitePostRepository) DeleteLike(userId uint, postId uint) error {
 	return nil
 }
 
-// Returns the id of the created post and can return ErrNoMatchingDependency, ErrRepeatedEntity
+// Returns the id of the created post, can return ErrNoMatchingDependency, ErrRepeatedEntity
 func (repo sqlitePostRepository) Create(ownerID uint, title, description, content string) (uint, error) {
 	db := repo.db
 
@@ -156,7 +156,7 @@ func (repo sqlitePostRepository) GetByID(id uint) (domain.Post, error) {
 	return post, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid posts, can return ErrEmptySelection
 func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 	db := repo.db
 
@@ -196,7 +196,7 @@ func (repo sqlitePostRepository) GetByUser(userId uint) ([]domain.Post, error) {
 	return posts, nil
 }
 
-// Can return ErrEmptySelection
+// Returns an slice of valid posts, can return ErrEmptySelection
 func (repo sqlitePostRepository) GetPopularAfter(moment time.Time, amount uint) ([]domain.Post, error) {
 	db := repo.db
 
