@@ -235,10 +235,10 @@ func (repo sqliteProfileRepository) Create(userID uint, tagName, displayName str
 	db := repo.db
 
 	query := `
-  INSERT INTO Profile(User_ID, Display_Name, Tag_Name)
+  INSERT INTO Profile(User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path)
   VALUES (?,?,?,?,?)
   `
-	res, err := db.Exec(query, userID, displayName, tagName)
+	res, err := db.Exec(query, userID, displayName, tagName, "", "")
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
 			logging.LogRepositoryError(ErrNoMatchingDependency)

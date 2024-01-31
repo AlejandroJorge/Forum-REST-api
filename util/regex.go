@@ -11,7 +11,7 @@ func IsEmailFormat(email string) bool {
 }
 
 func IsAlphanumeric(input string) bool {
-	alphanumericRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	alphanumericRegex := `[a-zA-Z0-9_.]+`
 
 	regex := regexp.MustCompile(alphanumericRegex)
 

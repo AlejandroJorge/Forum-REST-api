@@ -80,8 +80,13 @@ func (con profileControllerImpl) Create(w http.ResponseWriter, r *http.Request) 
 		DisplayName string `json:"DisplayName"`
 		TagName     string `json:"TagName"`
 	}
+	err := delivery.ReadJSONRequest(r, &createReq)
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
 
-	id, err := con.serv.Create(createReq.UserID, createReq.DisplayName, createReq.TagName)
+	id, err := con.serv.Create(createReq.UserID, createReq.TagName, createReq.DisplayName)
 	if err == service.ErrDependencyNotSatisfied {
 		delivery.WriteResponse(w, http.StatusBadRequest, "User doesn't exist")
 		return
