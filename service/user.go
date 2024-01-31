@@ -136,7 +136,7 @@ func (serv userServiceImpl) UpdatePassword(id uint, password string) error {
 	return nil
 }
 
-// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrNotExistingEntity
+// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrNotValidCredentials, ErrNotExistingEntity
 func (serv userServiceImpl) CheckCredentials(email, password string) error {
 	if !util.IsEmailFormat(email) || password == "" {
 		logging.LogDomainError(ErrIncorrectParameters)

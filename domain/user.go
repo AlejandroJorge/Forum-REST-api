@@ -64,6 +64,6 @@ type UserService interface {
 	// Returns a valid user, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByEmail(email string) (User, error)
 
-	// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrNotExistingEntity
+	// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrNotValidCredentials, ErrNotExistingEntity
 	CheckCredentials(email, password string) error
 }

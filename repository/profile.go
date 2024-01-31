@@ -432,7 +432,7 @@ func (repo sqliteProfileRepository) UpdatePicturePath(id uint, newPicturePath st
 	return nil
 }
 
-// Can return ErrNoRowsAffected
+// Can return ErrNoRowsAffected, ErrRepeatedEntity
 func (repo sqliteProfileRepository) UpdateTagName(id uint, newTagName string) error {
 	db := repo.db
 
@@ -442,6 +442,12 @@ func (repo sqliteProfileRepository) UpdateTagName(id uint, newTagName string) er
 	WHERE User_ID = ?
 	`
 	res, err := db.Exec(query, newTagName, id)
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return ErrRepeatedEntity
+		}
+	}
 	if err != nil {
 		logging.LogUnexpectedRepositoryError(err)
 		return ErrUnknown

@@ -29,7 +29,7 @@ func initializeRouter(router *mux.Router) {
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
 
 	initializeUserRoutes(apiRouter)
-	//initializeProfileRoutes(apiRouter)
+	initializeProfileRoutes(apiRouter)
 	//initializePostRoutes(apiRouter)
 	//initializeCommentRoutes(apiRouter)
 }
@@ -58,7 +58,6 @@ func initializeUserRoutes(router *mux.Router) {
 		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
 
-/*
 func initializeProfileRoutes(router *mux.Router) {
 	repository := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 	service := service.NewProfileService(repository)
@@ -68,7 +67,7 @@ func initializeProfileRoutes(router *mux.Router) {
 		controller.Create).Methods("POST")
 
 	router.HandleFunc("/profiles/{id:[0-9]+}",
-		controller.GetByID).Methods("GET")
+		controller.GetByUserID).Methods("GET")
 
 	router.HandleFunc("/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}",
 		controller.GetByTagName).Methods("GET")
@@ -85,11 +84,20 @@ func initializeProfileRoutes(router *mux.Router) {
 	router.HandleFunc("/profiles/{tagname:[a-zA-Z][a-zA-Z0-9]*}/follows",
 		controller.GetFollowsByTagName).Methods("GET")
 
-	router.HandleFunc("/profiles/{id:[0-9]+}",
-		controller.Update).Methods("PUT")
+	router.HandleFunc("/profiles/{id:[0-9]+}/tagname",
+		controller.UpdateTagName).Methods("PUT")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}/displayname",
+		controller.UpdateDisplayName).Methods("PUT")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}/picturepath",
+		controller.UpdatePicturePath).Methods("PUT")
+
+	router.HandleFunc("/profiles/{id:[0-9]+}/backgroundpath",
+		controller.UpdateBackgroundPath).Methods("PUT")
 
 	router.HandleFunc("/profiles/follows",
-		controller.CreateFollow).Methods("POST")
+		controller.AddFollow).Methods("POST")
 
 	router.HandleFunc("/profiles/follows",
 		controller.DeleteFollow).Methods("DELETE")
@@ -98,6 +106,7 @@ func initializeProfileRoutes(router *mux.Router) {
 		controller.Delete).Methods("DELETE")
 }
 
+/*
 func initializePostRoutes(router *mux.Router) {
 	repository := repository.NewSQLitePostRepository(config.SQLiteDatabase())
 	service := service.NewPostService(repository)

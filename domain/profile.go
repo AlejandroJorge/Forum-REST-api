@@ -29,7 +29,7 @@ type ProfileRepository interface {
 	// Can return ErrNoRowsAffected
 	Delete(id uint) error
 
-	// Can return ErrNoRowsAffected
+	// Can return ErrNoRowsAffected, ErrRepeatedEntity
 	UpdateTagName(id uint, newTagName string) error
 
 	// Can return ErrNoRowsAffected
@@ -73,7 +73,7 @@ type ProfileService interface {
 	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Delete(id uint) error
 
-	// Can return ErrNotExistingEntity
+	// Can return ErrNotExistingEntity, ErrAlreadyExisting
 	UpdateTagName(id uint, tagName string) error
 
 	// Can return ErrNotExistingEntity
@@ -103,7 +103,7 @@ type ProfileService interface {
 	// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetFollowsByTagName(tagName string) ([]Profile, error)
 
-	// Can return ErrAlreadyExisting, ErrNotExistingEntity,
+	// Can return ErrAlreadyExisting, ErrIncorrectParameters, ErrDependencyNotSatisfied
 	AddFollow(followerId uint, followedId uint) error
 
 	// Can return ErrIncorrectParameters, ErrNotExistingEntity

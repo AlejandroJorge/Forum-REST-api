@@ -11,7 +11,7 @@ type profileServiceImpl struct {
 	repo domain.ProfileRepository
 }
 
-// Can return ErrAlreadyExisting, ErrNotExistingEntity,
+// Can return ErrAlreadyExisting, ErrIncorrectParameters, ErrDependencyNotSatisfied
 func (serv profileServiceImpl) AddFollow(followerId uint, followedId uint) error {
 	if followedId == 0 || followerId == 0 {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -223,7 +223,7 @@ func (serv profileServiceImpl) GetFollowsByTagName(tagName string) ([]domain.Pro
 	return profiles, nil
 }
 
-// Can return ErrNotExistingEntity
+// Can return ErrNotExistingEntity, ErrAlreadyExisting
 func (serv profileServiceImpl) UpdateTagName(id uint, tagName string) error {
 	if id == 0 || !util.IsAlphanumeric(tagName) {
 		logging.LogDomainError(ErrIncorrectParameters)
@@ -234,6 +234,10 @@ func (serv profileServiceImpl) UpdateTagName(id uint, tagName string) error {
 	if err == repository.ErrNoRowsAffected {
 		logging.LogDomainError(ErrNotExistingEntity)
 		return ErrNotExistingEntity
+	}
+	if err == repository.ErrRepeatedEntity {
+		logging.LogDomainError(ErrAlreadyExisting)
+		return ErrAlreadyExisting
 	}
 	if err != nil {
 		logging.LogUnexpectedDomainError(err)

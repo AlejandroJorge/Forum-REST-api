@@ -2,230 +2,308 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
-	"github.com/gorilla/mux"
+	"github.com/AlejandroJorge/forum-rest-api/service"
 )
 
-type profileController struct {
+type ProfileController interface {
+	Create(w http.ResponseWriter, r *http.Request)
+
+	Delete(w http.ResponseWriter, r *http.Request)
+
+	UpdateTagName(w http.ResponseWriter, r *http.Request)
+
+	UpdateDisplayName(w http.ResponseWriter, r *http.Request)
+
+	UpdatePicturePath(w http.ResponseWriter, r *http.Request)
+
+	UpdateBackgroundPath(w http.ResponseWriter, r *http.Request)
+
+	GetByUserID(w http.ResponseWriter, r *http.Request)
+
+	GetByTagName(w http.ResponseWriter, r *http.Request)
+
+	GetFollowersByID(w http.ResponseWriter, r *http.Request)
+
+	GetFollowersByTagName(w http.ResponseWriter, r *http.Request)
+
+	GetFollowsByID(w http.ResponseWriter, r *http.Request)
+
+	GetFollowsByTagName(w http.ResponseWriter, r *http.Request)
+
+	AddFollow(w http.ResponseWriter, r *http.Request)
+
+	DeleteFollow(w http.ResponseWriter, r *http.Request)
+}
+
+type profileControllerImpl struct {
 	serv domain.ProfileService
 }
 
-func (con profileController) GetByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
+func (con profileControllerImpl) AddFollow(w http.ResponseWriter, r *http.Request) {
+	var addFollowReq struct {
+		FollowerID uint `json:"FollowerID"`
+		FollowedID uint `json:"FollowedID"`
 	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	err := delivery.ReadJSONRequest(r, &addFollowReq)
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	profile, err := con.serv.GetByUserID(uint(id))
-	if err == util.ErrNoCorrespondingUser {
-		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user corresponding to this id")
+	err = con.serv.AddFollow(addFollowReq.FollowerID, addFollowReq.FollowedID)
+	if err == service.ErrAlreadyExisting {
+		delivery.WriteResponse(w, http.StatusConflict, "This follow already exists")
+		return
 	}
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "This user doesn't have a profile")
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Follower or followed doesn't exist")
+		return
+	}
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve profile")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	delivery.WriteJSONResponse(w, http.StatusOK, profile)
+	delivery.WriteResponse(w, http.StatusCreated, "Follow successfully created")
 }
 
-func (con profileController) GetByTagName(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	tagName, ok := params["tagname"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided tagname")
-		return
-	}
-
-	profile, err := con.serv.GetByTagName(tagName)
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "There was no profile with this tagName")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve profile")
-		return
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, profile)
-}
-
-func (con profileController) GetFollowsByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	follows, err := con.serv.GetFollowsByID(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "No follows found")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve follows")
-		return
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, follows)
-}
-
-func (con profileController) GetFollowsByTagName(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	tagName, ok := params["tagname"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided tagname")
-		return
-	}
-
-	follows, err := con.serv.GetFollowsByTagName(tagName)
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "No follows found")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve follows")
-		return
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, follows)
-}
-
-func (con profileController) GetFollowersByID(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
-		return
-	}
-
-	followers, err := con.serv.GetFollowersByID(uint(id))
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "No followers found")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve followers")
-		return
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, followers)
-}
-
-func (con profileController) GetFollowersByTagName(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	tagName, ok := params["tagname"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided tagname")
-		return
-	}
-
-	followers, err := con.serv.GetFollowersByTagName(tagName)
-	if err == util.ErrEmptySelection {
-		delivery.WriteResponse(w, http.StatusNotFound, "No followers found")
-		return
-	}
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't retrieve followers")
-		return
-	}
-
-	delivery.WriteJSONResponse(w, http.StatusOK, followers)
-}
-
-func (con profileController) Create(w http.ResponseWriter, r *http.Request) {
+func (con profileControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	var createReq struct {
-		UserID         uint   `json:"UserID"`
-		DisplayName    string `json:"DisplayName"`
-		TagName        string `json:"TagName"`
-		PicturePath    string `json:"PicturePath,omitempty"`
-		BackgroundPath string `json:"BackgroundPath,omitempty"`
-	}
-	err := delivery.ReadJSONRequest(r, &createReq)
-	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
-		return
+		UserID      uint   `json:"UserID"`
+		DisplayName string `json:"DisplayName"`
+		TagName     string `json:"TagName"`
 	}
 
-	id, err := con.serv.CreateNew(struct {
-		UserID         uint
-		DisplayName    string
-		TagName        string
-		PicturePath    string
-		BackgroundPath string
-	}{
-		UserID:         createReq.UserID,
-		DisplayName:    createReq.DisplayName,
-		TagName:        createReq.TagName,
-		PicturePath:    createReq.PicturePath,
-		BackgroundPath: createReq.BackgroundPath,
-	})
-	if err == util.ErrRepeatedEntity {
-		delivery.WriteResponse(w, http.StatusConflict, "There's already a profile for the same User or TagName is taken")
+	id, err := con.serv.Create(createReq.UserID, createReq.DisplayName, createReq.TagName)
+	if err == service.ErrDependencyNotSatisfied {
+		delivery.WriteResponse(w, http.StatusBadRequest, "User doesn't exist")
 		return
 	}
-	if err == util.ErrNoCorrespondingUser {
-		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user corresponding to this ID")
+	if err == service.ErrProfileExistsOrTagNameIsRepeated {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Profile already exists for this user or tag name is repeated")
+		return
+	}
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
 		return
 	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create resource")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	response := struct {
 		ID uint `json:"ID"`
-	}{ID: id}
+	}{
+		ID: id,
+	}
 	delivery.WriteJSONResponse(w, http.StatusCreated, response)
 }
 
-func (con profileController) Update(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
+func (con profileControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
-	id, err := strconv.ParseUint(idStr, 10, 64)
+	err = con.serv.Delete(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile doesn't exist")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Profile deleted successfully")
+}
+
+func (con profileControllerImpl) DeleteFollow(w http.ResponseWriter, r *http.Request) {
+	var addFollowReq struct {
+		FollowerID uint `json:"FollowerID"`
+		FollowedID uint `json:"FollowedID"`
+	}
+	err := delivery.ReadJSONRequest(r, &addFollowReq)
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "ID provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		return
+	}
+
+	err = con.serv.DeleteFollow(addFollowReq.FollowerID, addFollowReq.FollowedID)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Follower or followed doesn't exist")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Follow deleted successfully")
+}
+
+func (con profileControllerImpl) GetByTagName(w http.ResponseWriter, r *http.Request) {
+	tagName, err := delivery.ParseStringParam(r, "tagname")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid tagname provided")
+		return
+	}
+
+	profile, err := con.serv.GetByTagName(tagName)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, profile)
+}
+
+func (con profileControllerImpl) GetByUserID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
+		return
+	}
+
+	profile, err := con.serv.GetByUserID(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile doesn't exist")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, profile)
+}
+
+func (con profileControllerImpl) GetFollowersByID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
+		return
+	}
+
+	followers, err := con.serv.GetFollowersByID(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No followers found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, followers)
+}
+
+func (con profileControllerImpl) GetFollowersByTagName(w http.ResponseWriter, r *http.Request) {
+	tagName, err := delivery.ParseStringParam(r, "tagname")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid tagname provided")
+		return
+	}
+
+	followers, err := con.serv.GetFollowersByTagName(tagName)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No followers found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, followers)
+}
+
+func (con profileControllerImpl) GetFollowsByID(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid tagname provided")
+		return
+	}
+
+	follows, err := con.serv.GetFollowsByID(id)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No follows found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, follows)
+}
+
+func (con profileControllerImpl) GetFollowsByTagName(w http.ResponseWriter, r *http.Request) {
+	tagName, err := delivery.ParseStringParam(r, "tagname")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid tagname provided")
+		return
+	}
+
+	follows, err := con.serv.GetFollowsByTagName(tagName)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "No follows found")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteJSONResponse(w, http.StatusOK, follows)
+}
+
+func (con profileControllerImpl) UpdateBackgroundPath(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
 	var updateReq struct {
-		TagName        string `json:"TagName,omitempty"`
-		DisplayName    string `json:"DisplayName,omitempty"`
-		PicturePath    string `json:"PicturePath,omitempty"`
-		BackgroundPath string `json:"BackgroundPath,omitempty"`
+		BackgroundPath string `json:"BackgroundPath"`
 	}
 	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
@@ -233,86 +311,110 @@ func (con profileController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = con.serv.Update(uint(id), struct {
-		UpdatedTagName        string
-		UpdatedDisplayName    string
-		UpdatedPicturePath    string
-		UpdatedBackgroundPath string
-	}{
-		UpdatedTagName:        updateReq.TagName,
-		UpdatedDisplayName:    updateReq.DisplayName,
-		UpdatedPicturePath:    updateReq.PicturePath,
-		UpdatedBackgroundPath: updateReq.BackgroundPath,
-	})
+	err = con.serv.UpdateBackgroundPath(id, updateReq.BackgroundPath)
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile with that ID doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't update profile")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	delivery.WriteResponse(w, http.StatusOK, "Profile updated successfully")
 }
 
-func (con profileController) CreateFollow(w http.ResponseWriter, r *http.Request) {
-	var followReq struct {
-		FollowerID uint
-		FollowedID uint
+func (con profileControllerImpl) UpdateDisplayName(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
+		return
 	}
-	err := delivery.ReadJSONRequest(r, &followReq)
+
+	var updateReq struct {
+		DisplayName string `json:"DisplayName"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	err = con.serv.AddFollow(followReq.FollowerID, followReq.FollowedID)
+	err = con.serv.UpdateDisplayName(id, updateReq.DisplayName)
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile with that ID doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create follow relationship")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
 	}
 
-	delivery.WriteResponse(w, http.StatusOK, "Registered follow successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Profile updated successfully")
 }
 
-func (con profileController) DeleteFollow(w http.ResponseWriter, r *http.Request) {
-	var followReq struct {
-		FollowerID uint
-		FollowedID uint
+func (con profileControllerImpl) UpdatePicturePath(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
+		return
 	}
-	err := delivery.ReadJSONRequest(r, &followReq)
+
+	var updateReq struct {
+		PicturePath string `json:"PicturePath"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	err = con.serv.DeleteFollow(followReq.FollowerID, followReq.FollowedID)
+	err = con.serv.UpdatePicturePath(id, updateReq.PicturePath)
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile with that ID doesn't exist")
+		return
+	}
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't create follow relationship")
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
 	}
 
-	delivery.WriteResponse(w, http.StatusOK, "Deleted follow successfully")
+	delivery.WriteResponse(w, http.StatusOK, "Profile updated successfully")
 }
 
-func (con profileController) Delete(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	idStr, ok := params["id"]
-	if !ok {
-		delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-		return
-	}
-
-	id, err := strconv.ParseUint(idStr, 10, 64)
+func (con profileControllerImpl) UpdateTagName(w http.ResponseWriter, r *http.Request) {
+	id, err := delivery.ParseUintParam(r, "id")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
 	}
 
-	err = con.serv.Delete(uint(id))
+	var updateReq struct {
+		TagName string `json:"TagName"`
+	}
+	err = delivery.ReadJSONRequest(r, &updateReq)
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't delete") // This is uncompressed, there's more errors to handle
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	delivery.WriteResponse(w, http.StatusOK, "Deleted")
+	err = con.serv.UpdateTagName(id, updateReq.TagName)
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "Profile with that ID doesn't exist")
+		return
+	}
+	if err == service.ErrAlreadyExisting {
+		delivery.WriteResponse(w, http.StatusConflict, "That tagname already exists")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	delivery.WriteResponse(w, http.StatusOK, "Profile updated successfully")
 }
 
-func NewProfileController(serv domain.ProfileService) profileController {
-	return profileController{serv: serv}
+func NewProfileController(serv domain.ProfileService) ProfileController {
+	return profileControllerImpl{serv: serv}
 }
