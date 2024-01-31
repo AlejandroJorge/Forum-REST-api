@@ -67,31 +67,45 @@ type ProfileRepository interface {
 }
 
 type ProfileService interface {
-	Create(userID uint, displayName, tagName, picturePath, backgroundPath string) (uint, error)
+	// Returns the ID corresponding to the created profile, can return ErrDependencyNotSatisfied, ErrProfileExistsOrTagNameIsRepeated, ErrIncorrectParameters
+	Create(userID uint, displayName, tagName string) (uint, error)
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	Delete(id uint) error
 
+	// Can return ErrNotExistingEntity
 	UpdateTagName(id uint, tagName string) error
 
+	// Can return ErrNotExistingEntity
 	UpdateDisplayName(id uint, displayName string) error
 
+	// Can return ErrNotExistingEntity
 	UpdatePicturePath(id uint, picturePath string) error
 
+	// Can return ErrNotExistingEntity
 	UpdateBackgroundPath(id uint, backgroundPath string) error
 
+	// Returns a valid profile, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByUserID(userId uint) (Profile, error)
 
+	// Returns a valid profile, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetByTagName(tagName string) (Profile, error)
 
+	// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetFollowersByID(userId uint) ([]Profile, error)
 
+	// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetFollowersByTagName(tagName string) ([]Profile, error)
 
+	// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetFollowsByID(userId uint) ([]Profile, error)
 
+	// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 	GetFollowsByTagName(tagName string) ([]Profile, error)
 
+	// Can return ErrAlreadyExisting, ErrNotExistingEntity,
 	AddFollow(followerId uint, followedId uint) error
 
+	// Can return ErrIncorrectParameters, ErrNotExistingEntity
 	DeleteFollow(followerId uint, followedId uint) error
 }

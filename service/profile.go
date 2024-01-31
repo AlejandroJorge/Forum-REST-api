@@ -2,6 +2,8 @@ package service
 
 import (
 	"github.com/AlejandroJorge/forum-rest-api/domain"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
 )
 
@@ -9,140 +11,293 @@ type profileServiceImpl struct {
 	repo domain.ProfileRepository
 }
 
+// Can return ErrAlreadyExisting, ErrNotExistingEntity,
 func (serv profileServiceImpl) AddFollow(followerId uint, followedId uint) error {
 	if followedId == 0 || followerId == 0 {
-		return util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	return serv.repo.AddFollow(followerId, followedId)
-}
-
-func (serv profileServiceImpl) CreateNew(createInfo struct {
-	UserID         uint
-	DisplayName    string
-	TagName        string
-	PicturePath    string
-	BackgroundPath string
-}) (uint, error) {
-	if createInfo.UserID == 0 ||
-		createInfo.DisplayName == "" ||
-		util.IsAlphanumeric(createInfo.TagName) {
-		return 0, util.ErrIncorrectParameters
+	err := serv.repo.AddFollow(followerId, followedId)
+	if err == repository.ErrRepeatedEntity {
+		logging.LogDomainError(ErrAlreadyExisting)
+		return ErrAlreadyExisting
+	}
+	if err == repository.ErrNoMatchingDependency {
+		logging.LogDomainError(ErrDependencyNotSatisfied)
+		return ErrDependencyNotSatisfied
+	}
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
 	}
 
-	return serv.repo.CreateNew(domain.Profile{
-		UserID:         createInfo.UserID,
-		DisplayName:    createInfo.DisplayName,
-		TagName:        createInfo.TagName,
-		PicturePath:    createInfo.PicturePath,
-		BackgroundPath: createInfo.BackgroundPath,
-	})
+	return nil
 }
 
+// Returns the ID corresponding to the created profile, can return ErrDependencyNotSatisfied, ErrProfileExistsOrTagNameIsRepeated, ErrIncorrectParameters
+func (serv profileServiceImpl) Create(userID uint, tagName, displayName string) (uint, error) {
+	if userID == 0 || displayName == "" || !util.IsAlphanumeric(tagName) {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return 0, ErrIncorrectParameters
+	}
+
+	id, err := serv.repo.Create(userID, tagName, displayName)
+	if err == repository.ErrNoMatchingDependency {
+		logging.LogDomainError(ErrDependencyNotSatisfied)
+		return 0, ErrDependencyNotSatisfied
+	}
+	if err == repository.ErrRepeatedEntity {
+		logging.LogDomainError(ErrProfileExistsOrTagNameIsRepeated)
+		return 0, ErrProfileExistsOrTagNameIsRepeated
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return 0, ErrUnknown
+	}
+
+	return id, nil
+}
+
+// Can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) Delete(id uint) error {
 	if id == 0 {
-		return util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	return serv.Delete(id)
+	err := serv.repo.Delete(id)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	return nil
 }
 
+// Can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) DeleteFollow(followerId uint, followedId uint) error {
 	if followedId == 0 || followerId == 0 {
-		return util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	return serv.repo.DeleteFollow(followerId, followedId)
+	err := serv.repo.DeleteFollow(followerId, followedId)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	return nil
 }
 
+// Returns a valid profile, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetByTagName(tagName string) (domain.Profile, error) {
 	if !util.IsAlphanumeric(tagName) {
-		return domain.Profile{}, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return domain.Profile{}, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetByTagName(tagName)
+	profile, err := serv.repo.GetByTagName(tagName)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return domain.Profile{}, ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return domain.Profile{}, ErrUnknown
+	}
+
+	return profile, nil
 }
 
+// Returns a valid profile, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetByUserID(userId uint) (domain.Profile, error) {
 	if userId == 0 {
-		return domain.Profile{}, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return domain.Profile{}, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetByUserID(userId)
+	profile, err := serv.repo.GetByUserID(userId)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return domain.Profile{}, ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return domain.Profile{}, ErrUnknown
+	}
+
+	return profile, nil
 }
 
+// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetFollowersByID(userId uint) ([]domain.Profile, error) {
 	if userId == 0 {
-		return nil, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return nil, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetFollowersByID(userId)
+	profiles, err := serv.repo.GetFollowersByID(userId)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return nil, ErrNotExistingEntity
+	}
+
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return nil, ErrUnknown
+	}
+
+	return profiles, nil
 }
 
+// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
 	if !util.IsAlphanumeric(tagName) {
-		return nil, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return nil, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetFollowersByTagName(tagName)
+	profiles, err := serv.repo.GetFollowersByTagName(tagName)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return nil, ErrNotExistingEntity
+	}
+
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return nil, ErrUnknown
+	}
+
+	return profiles, nil
 }
 
+// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetFollowsByID(userId uint) ([]domain.Profile, error) {
 	if userId == 0 {
-		return nil, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return nil, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetFollowsByID(userId)
+	profiles, err := serv.repo.GetFollowsByID(userId)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return nil, ErrNotExistingEntity
+	}
+
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return nil, ErrUnknown
+	}
+
+	return profiles, nil
 }
 
+// Returns a slice of valid profiles, can return ErrIncorrectParameters, ErrNotExistingEntity
 func (serv profileServiceImpl) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
 	if !util.IsAlphanumeric(tagName) {
-		return nil, util.ErrIncorrectParameters
+		logging.LogDomainError(ErrIncorrectParameters)
+		return nil, ErrIncorrectParameters
 	}
 
-	return serv.repo.GetFollowsByTagName(tagName)
+	profiles, err := serv.repo.GetFollowsByTagName(tagName)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return nil, ErrNotExistingEntity
+	}
+
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return nil, ErrUnknown
+	}
+
+	return profiles, nil
 }
 
-func (serv profileServiceImpl) Update(id uint, updateInfo struct {
-	UpdatedTagName        string
-	UpdatedDisplayName    string
-	UpdatedPicturePath    string
-	UpdatedBackgroundPath string
-}) error {
-	if id == 0 {
-		return util.ErrIncorrectParameters
+// Can return ErrNotExistingEntity
+func (serv profileServiceImpl) UpdateTagName(id uint, tagName string) error {
+	if id == 0 || !util.IsAlphanumeric(tagName) {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	if updateInfo.UpdatedTagName != "" {
-		if !util.IsAlphanumeric(updateInfo.UpdatedTagName) {
-			return util.ErrIncorrectParameters
-		}
-
-		err := serv.repo.UpdateTagName(id, updateInfo.UpdatedTagName)
-		if err != nil {
-			return err
-		}
+	err := serv.repo.UpdateTagName(id, tagName)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
 	}
 
-	if updateInfo.UpdatedDisplayName != "" {
-		err := serv.repo.UpdateDisplayName(id, updateInfo.UpdatedDisplayName)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+// Can return ErrNotExistingEntity
+func (serv profileServiceImpl) UpdateDisplayName(id uint, displayName string) error {
+	if id == 0 || displayName == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
 	}
 
-	if updateInfo.UpdatedPicturePath != "" {
-		err := serv.repo.UpdatePicturePath(id, updateInfo.UpdatedPicturePath)
-		if err != nil {
-			return err
-		}
+	err := serv.repo.UpdateDisplayName(id, displayName)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
 	}
 
-	if updateInfo.UpdatedBackgroundPath != "" {
-		err := serv.repo.UpdateBackgroundPath(id, updateInfo.UpdatedBackgroundPath)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+// Can return ErrNotExistingEntity
+func (serv profileServiceImpl) UpdatePicturePath(id uint, picturePath string) error {
+	if id == 0 || picturePath == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
+	}
+
+	err := serv.repo.UpdatePicturePath(id, picturePath)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	return nil
+}
+
+// Can return ErrNotExistingEntity
+func (serv profileServiceImpl) UpdateBackgroundPath(id uint, backgroundPath string) error {
+	if id == 0 || backgroundPath == "" {
+		logging.LogDomainError(ErrIncorrectParameters)
+		return ErrIncorrectParameters
+	}
+
+	err := serv.repo.UpdateBackgroundPath(id, backgroundPath)
+	if err == repository.ErrNoRowsAffected {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
 	}
 
 	return nil
