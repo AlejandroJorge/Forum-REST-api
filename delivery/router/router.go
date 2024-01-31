@@ -30,7 +30,7 @@ func initializeRouter(router *mux.Router) {
 
 	initializeUserRoutes(apiRouter)
 	initializeProfileRoutes(apiRouter)
-	//initializePostRoutes(apiRouter)
+	initializePostRoutes(apiRouter)
 	//initializeCommentRoutes(apiRouter)
 }
 

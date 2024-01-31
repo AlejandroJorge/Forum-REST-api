@@ -251,7 +251,7 @@ func (serv postServiceImpl) UpdateContent(id uint, content string) error {
 		return ErrIncorrectParameters
 	}
 
-	err := serv.repo.UpdateDescription(id, content)
+	err := serv.repo.UpdateContent(id, content)
 	if err == repository.ErrNoRowsAffected {
 		logging.LogDomainError(ErrNotExistingEntity)
 		return ErrNotExistingEntity
