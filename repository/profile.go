@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/domain"
-	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -13,6 +13,7 @@ type sqliteProfileRepository struct {
 	db *sql.DB
 }
 
+// Can return ErrRepeatedEntity
 func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) error {
 	db := repo.db
 
@@ -21,13 +22,21 @@ func (repo sqliteProfileRepository) AddFollow(followerId uint, followedId uint) 
 	VALUES (?,?,?)
 	`
 	_, err := db.Exec(query, followerId, followedId, time.Now().Unix())
+	if sqliteErr, ok := err.(sqlite3.Error); ok {
+		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return ErrRepeatedEntity
+		}
+	}
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uint) error {
 	db := repo.db
 
@@ -35,18 +44,31 @@ func (repo sqliteProfileRepository) DeleteFollow(followerId uint, followedId uin
 	DELETE FROM Following
 	WHERE Follower_ID = ? AND Followed_ID = ?
 	`
-	_, err := db.Exec(query, followerId, followedId)
+	res, err := db.Exec(query, followerId, followedId)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Profile, error) {
 	db := repo.db
 
-	var posts []domain.Profile
+	var profiles []domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
   FROM Profile p
@@ -59,30 +81,34 @@ func (repo sqliteProfileRepository) GetFollowersByID(userId uint) ([]domain.Prof
 	`
 	rows, err := db.Query(query, userId)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
-		var post domain.Profile
-		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		var p domain.Profile
+		err = rows.Scan(&p.UserID, &p.DisplayName, &p.TagName, &p.PicturePath, &p.BackgroundPath, &p.Follows, &p.Followers)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
-		posts = append(posts, post)
+		profiles = append(profiles, p)
 	}
 
-	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
+	if len(profiles) == 0 {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
-	return posts, nil
+	return profiles, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]domain.Profile, error) {
 	db := repo.db
 
-	var posts []domain.Profile
+	var profiles []domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
   FROM Profile p
@@ -96,30 +122,34 @@ func (repo sqliteProfileRepository) GetFollowersByTagName(tagName string) ([]dom
 	`
 	rows, err := db.Query(query, tagName)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
-		var post domain.Profile
-		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		var p domain.Profile
+		err = rows.Scan(&p.UserID, &p.DisplayName, &p.TagName, &p.PicturePath, &p.BackgroundPath, &p.Follows, &p.Followers)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
-		posts = append(posts, post)
+		profiles = append(profiles, p)
 	}
 
-	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
+	if len(profiles) == 0 {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
-	return posts, nil
+	return profiles, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profile, error) {
 	db := repo.db
 
-	var posts []domain.Profile
+	var profiles []domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
   FROM Profile p
@@ -132,30 +162,34 @@ func (repo sqliteProfileRepository) GetFollowsByID(userId uint) ([]domain.Profil
 	`
 	rows, err := db.Query(query, userId)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
-		var post domain.Profile
-		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		var p domain.Profile
+		err = rows.Scan(&p.UserID, &p.DisplayName, &p.TagName, &p.PicturePath, &p.BackgroundPath, &p.Follows, &p.Followers)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
-		posts = append(posts, post)
+		profiles = append(profiles, p)
 	}
 
-	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
+	if len(profiles) == 0 {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
-	return posts, nil
+	return profiles, nil
 }
 
+// Can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domain.Profile, error) {
 	db := repo.db
 
-	var posts []domain.Profile
+	var profiles []domain.Profile
 	query := `
   SELECT p.User_ID, p.Display_Name, p.Tag_Name, p.Picture_Path, p.Background_Path, COUNT(f1.Follower_ID), COUNT(f2.Followed_ID)
   FROM Profile p
@@ -169,52 +203,57 @@ func (repo sqliteProfileRepository) GetFollowsByTagName(tagName string) ([]domai
 	`
 	rows, err := db.Query(query, tagName)
 	if err != nil {
-		return nil, err
+		logging.LogUnexpectedRepositoryError(err)
+		return nil, ErrUnknown
 	}
 
 	for rows.Next() {
-		var post domain.Profile
-		err = rows.Scan(&post.UserID, &post.DisplayName, &post.TagName, &post.PicturePath, &post.BackgroundPath, &post.Follows, &post.Followers)
+		var p domain.Profile
+		err = rows.Scan(&p.UserID, &p.DisplayName, &p.TagName, &p.PicturePath, &p.BackgroundPath, &p.Follows, &p.Followers)
 		if err != nil {
-			return nil, err
+			logging.LogUnexpectedRepositoryError(err)
+			return nil, ErrUnknown
 		}
 
-		posts = append(posts, post)
+		profiles = append(profiles, p)
 	}
 
-	if len(posts) == 0 {
-		return nil, util.ErrEmptySelection
+	if len(profiles) == 0 {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return nil, ErrEmptySelection
 	}
 
-	return posts, nil
+	return profiles, nil
 }
 
-func (repo sqliteProfileRepository) CreateNew(profile domain.Profile) (uint, error) {
+// Returns the id of the created profile and can return ErrNoMatchingDependency, ErrRepeatedEntity
+func (repo sqliteProfileRepository) Create(userID uint, tagName, displayName string) (uint, error) {
 	db := repo.db
 
 	query := `
-  INSERT INTO Profile(User_ID, Display_Name, Tag_Name, Picture_Path, Background_Path)
+  INSERT INTO Profile(User_ID, Display_Name, Tag_Name)
   VALUES (?,?,?,?,?)
   `
-	res, err := db.Exec(query, profile.UserID, profile.DisplayName, profile.TagName, profile.PicturePath, profile.BackgroundPath)
+	res, err := db.Exec(query, userID, displayName, tagName)
 	if sqliteErr, ok := err.(sqlite3.Error); ok {
-		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey {
-			err = util.ErrRepeatedEntity
-		}
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintForeignKey {
-			err = util.ErrNoCorrespondingUser
+			logging.LogRepositoryError(ErrNoMatchingDependency)
+			return 0, ErrNoMatchingDependency
 		}
 		if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			err = util.ErrRepeatedEntity
+			logging.LogRepositoryError(ErrRepeatedEntity)
+			return 0, ErrRepeatedEntity
 		}
 	}
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
 	newId, err := res.LastInsertId()
 	if err != nil {
-		return 0, err
+		logging.LogUnexpectedRepositoryError(err)
+		return 0, ErrUnknown
 	}
 
 	return uint(newId), nil
@@ -227,14 +266,27 @@ func (repo sqliteProfileRepository) Delete(id uint) error {
   DELETE FROM Profile 
   WHERE User_ID = ?
   `
-	_, err := db.Exec(query, id)
+	res, err := db.Exec(query, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Returns a valid profile and can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile, error) {
 	db := repo.db
 
@@ -249,16 +301,19 @@ func (repo sqliteProfileRepository) GetByTagName(tagName string) (domain.Profile
   `
 	row := db.QueryRow(query, tagName)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
+	if err == sql.ErrNoRows {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return domain.Profile{}, ErrEmptySelection
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			err = util.ErrEmptySelection
-		}
-		return domain.Profile{}, err
+		logging.LogUnexpectedRepositoryError(err)
+		return domain.Profile{}, ErrUnknown
 	}
 
 	return profile, nil
 }
 
+// Returns a valid profile and can return ErrEmptySelection
 func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, error) {
 	db := repo.db
 
@@ -273,16 +328,19 @@ func (repo sqliteProfileRepository) GetByUserID(userId uint) (domain.Profile, er
   `
 	row := db.QueryRow(query, userId)
 	err := row.Scan(&profile.UserID, &profile.DisplayName, &profile.TagName, &profile.PicturePath, &profile.BackgroundPath, &profile.Followers, &profile.Follows)
+	if err == sql.ErrNoRows {
+		logging.LogRepositoryError(ErrEmptySelection)
+		return domain.Profile{}, ErrEmptySelection
+	}
 	if err != nil {
-		if err == sql.ErrNoRows {
-			err = util.ErrEmptySelection
-		}
-		return domain.Profile{}, err
+		logging.LogUnexpectedRepositoryError(err)
+		return domain.Profile{}, ErrUnknown
 	}
 
 	return profile, nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) UpdateBackgroundPath(id uint, newBackgroundPath string) error {
 	db := repo.db
 
@@ -291,14 +349,27 @@ func (repo sqliteProfileRepository) UpdateBackgroundPath(id uint, newBackgroundP
 	SET Background_Path = ?
 	WHERE User_ID = ?
 	`
-	_, err := db.Exec(query, newBackgroundPath, id)
+	res, err := db.Exec(query, newBackgroundPath, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) UpdateDisplayName(id uint, newDisplayName string) error {
 	db := repo.db
 
@@ -307,14 +378,27 @@ func (repo sqliteProfileRepository) UpdateDisplayName(id uint, newDisplayName st
 	SET Display_Name = ?
 	WHERE User_ID = ?
 	`
-	_, err := db.Exec(query, newDisplayName, id)
+	res, err := db.Exec(query, newDisplayName, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) UpdatePicturePath(id uint, newPicturePath string) error {
 	db := repo.db
 
@@ -323,14 +407,27 @@ func (repo sqliteProfileRepository) UpdatePicturePath(id uint, newPicturePath st
 	SET Picture_Path = ?
 	WHERE User_ID = ?
 	`
-	_, err := db.Exec(query, newPicturePath, id)
+	res, err := db.Exec(query, newPicturePath, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil
 }
 
+// Can return ErrNoRowsAffected
 func (repo sqliteProfileRepository) UpdateTagName(id uint, newTagName string) error {
 	db := repo.db
 
@@ -339,9 +436,21 @@ func (repo sqliteProfileRepository) UpdateTagName(id uint, newTagName string) er
 	SET Tag_Name = ?
 	WHERE User_ID = ?
 	`
-	_, err := db.Exec(query, newTagName, id)
+	res, err := db.Exec(query, newTagName, id)
 	if err != nil {
-		return err
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	amountAffected, err := res.RowsAffected()
+	if err != nil {
+		logging.LogUnexpectedRepositoryError(err)
+		return ErrUnknown
+	}
+
+	if amountAffected == 0 {
+		logging.LogRepositoryError(ErrNoRowsAffected)
+		return ErrNoRowsAffected
 	}
 
 	return nil

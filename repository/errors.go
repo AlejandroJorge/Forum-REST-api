@@ -9,3 +9,5 @@ var ErrRepeatedEntity = errors.New("There's already an entity with a unique attr
 var ErrNoRowsAffected = errors.New("The action affected no rows")
 
 var ErrEmptySelection = errors.New("The query retrieved no rows")
+
+var ErrNoMatchingDependency = errors.New("The entity required doens't exist")
