@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/service"
@@ -35,13 +36,14 @@ func (con userControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	err := delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
+		fmt.Println("Error:", err)
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
 		return
 	}
 
 	id, err := con.serv.Create(createReq.Email, createReq.Password)
 	if err == service.ErrIncorrectParameters {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect format of request")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
 		return
 	}
 	if err == service.ErrPasswordUnableToHash {
@@ -92,13 +94,27 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	user, err := con.serv.GetByEmail(loginReq.Email)
+	if err == service.ErrIncorrectParameters {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid email")
+		return
+	}
+	if err == service.ErrNotExistingEntity {
+		delivery.WriteResponse(w, http.StatusNotFound, "There's no user for this email")
+		return
+	}
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusInternalServerError, "")
+		return
+	}
+
 	expireDate := time.Now().Add(time.Minute * 10)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss": loginReq.Email,
+		"iss": user.ID,
 		"exp": expireDate.Unix(),
 	})
 
-	tokenStr, err := token.SignedString([]byte(os.Getenv("AUTH_SECRET")))
+	tokenStr, err := token.SignedString(config.GetParams().AuthSecret)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusInternalServerError, "Couldn't sign token")
 		return

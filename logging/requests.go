@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"io"
 	"log"
 	"net/http"
 )
@@ -10,14 +9,8 @@ func LogRequest(r *http.Request) {
 	msg := `
   [REQUEST] Route: %s,
   [REQUEST] Method: %s,
-  [REQUEST] Content: %s,
   `
-	content, err := io.ReadAll(r.Body)
-	if err != nil {
-		content = []byte("ERROR, couldn't read body")
-	}
-
-	log.Printf(msg, r.URL.Path, r.Method, content)
+	log.Printf(msg, r.URL.Path, r.Method)
 }
 
 func LogResponse(statusCode int, data interface{}) {
@@ -27,4 +20,12 @@ func LogResponse(statusCode int, data interface{}) {
   %s
   `
 	log.Printf(msg, statusCode, data)
+}
+
+func LogRawResponse(statusCode int, message string) {
+	msg := `
+  [RESPONSE] Status code: %d
+  [RESPONSE] Content: %s
+  `
+	log.Printf(msg, statusCode, message)
 }

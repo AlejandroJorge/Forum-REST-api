@@ -4,12 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 
+	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
 	"github.com/golang-jwt/jwt"
-	"github.com/gorilla/mux"
 )
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
@@ -27,7 +25,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 				return nil, errors.New("Not corresponding signing method")
 			}
 
-			return []byte(os.Getenv("AUTH_SECRET")), nil
+			return config.GetParams().AuthSecret, nil
 		})
 		if err != nil {
 			fmt.Println(err)
@@ -35,16 +33,9 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		params := mux.Vars(r)
-		idStr, ok := params["id"]
-		if !ok {
-			delivery.WriteResponse(w, http.StatusBadRequest, "No provided ID")
-			return
-		}
-
-		id, err := strconv.ParseUint(idStr, 10, 64)
+		id, err := delivery.ParseUintParam(r, "id")
 		if err != nil {
-			delivery.WriteResponse(w, http.StatusBadRequest, "Id provided isn't a number")
+			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID")
 			return
 		}
 
@@ -60,11 +51,9 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		issuerID := uint(rawIssuerID.(float64))
+		issuerID := rawIssuerID.(float64)
 
-		userID := uint(id)
-
-		if issuerID == userID {
+		if uint(issuerID) == id {
 			next(w, r)
 		} else {
 			delivery.WriteResponse(w, http.StatusUnauthorized, "You're not authorized for this resource")

@@ -29,9 +29,9 @@ func initializeRouter(router *mux.Router) {
 	apiRouter := router.PathPrefix("/api/v1").Subrouter()
 
 	initializeUserRoutes(apiRouter)
-	initializeProfileRoutes(apiRouter)
-	initializePostRoutes(apiRouter)
-	initializeCommentRoutes(apiRouter)
+	//initializeProfileRoutes(apiRouter)
+	//initializePostRoutes(apiRouter)
+	//initializeCommentRoutes(apiRouter)
 }
 
 func initializeUserRoutes(router *mux.Router) {
@@ -58,6 +58,7 @@ func initializeUserRoutes(router *mux.Router) {
 		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
 
+/*
 func initializeProfileRoutes(router *mux.Router) {
 	repository := repository.NewSQLiteProfileRepository(config.SQLiteDatabase())
 	service := service.NewProfileService(repository)
@@ -156,3 +157,4 @@ func initializeCommentRoutes(router *mux.Router) {
 	router.HandleFunc("/comments/{id:[0-9]+}",
 		controller.Delete).Methods("DELETE")
 }
+*/

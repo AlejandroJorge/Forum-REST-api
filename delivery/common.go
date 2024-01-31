@@ -24,7 +24,7 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) 
 		w.WriteHeader(statusCode)
 		errorMsg := "Unable to write response"
 		w.Write([]byte(errorMsg))
-		logging.LogResponse(statusCode, errorMsg)
+		logging.LogRawResponse(statusCode, errorMsg)
 	}
 	logging.LogResponse(statusCode, data)
 }
@@ -32,7 +32,7 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) 
 func WriteResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.WriteHeader(statusCode)
 	w.Write([]byte(message))
-	logging.LogResponse(statusCode, message)
+	logging.LogRawResponse(statusCode, message)
 }
 
 func ParseUintParam(r *http.Request, key string) (uint, error) {
