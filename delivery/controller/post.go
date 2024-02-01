@@ -41,17 +41,18 @@ type postControllerImpl struct {
 }
 
 func (con postControllerImpl) AddLike(w http.ResponseWriter, r *http.Request) {
-	var addLikeReq struct {
-		UserID uint `json:"UserID"`
-		PostID uint `json:"PostID"`
-	}
-	err := delivery.ReadJSONRequest(r, &addLikeReq)
+	userID, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid userID provided")
+		return
+	}
+	postID, err := delivery.ParseUintParam(r, "postid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid postID provided")
 		return
 	}
 
-	err = con.serv.AddLike(addLikeReq.UserID, addLikeReq.PostID)
+	err = con.serv.AddLike(userID, postID)
 	if err == service.ErrAlreadyExisting {
 		delivery.WriteResponse(w, http.StatusConflict, "Like already exists")
 		return
@@ -73,19 +74,23 @@ func (con postControllerImpl) AddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con postControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
+	userID, err := delivery.ParseUintParam(r, "userid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
+		return
+	}
 	var createReq struct {
-		UserID      uint   `json:"UserID"`
 		Title       string `json:"Title"`
 		Description string `json:"Description"`
 		Content     string `json:"Content"`
 	}
-	err := delivery.ReadJSONRequest(r, &createReq)
+	err = delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	id, err := con.serv.Create(createReq.UserID, createReq.Title, createReq.Description, createReq.Content)
+	id, err := con.serv.Create(userID, createReq.Title, createReq.Description, createReq.Content)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided parameters")
 		return
@@ -112,7 +117,7 @@ func (con postControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con postControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "postid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
 		return
@@ -136,17 +141,18 @@ func (con postControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con postControllerImpl) DeleteLike(w http.ResponseWriter, r *http.Request) {
-	var delLikeReq struct {
-		UserID uint `json:"UserID"`
-		PostID uint `json:"PostID"`
-	}
-	err := delivery.ReadJSONRequest(r, &delLikeReq)
+	userID, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid userID provided")
+		return
+	}
+	postID, err := delivery.ParseUintParam(r, "postid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid postID provided")
 		return
 	}
 
-	err = con.serv.DeleteLike(delLikeReq.UserID, delLikeReq.PostID)
+	err = con.serv.DeleteLike(userID, postID)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
@@ -164,13 +170,13 @@ func (con postControllerImpl) DeleteLike(w http.ResponseWriter, r *http.Request)
 }
 
 func (con postControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	postID, err := delivery.ParseUintParam(r, "postid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided ")
 		return
 	}
 
-	post, err := con.serv.GetByID(id)
+	post, err := con.serv.GetByID(postID)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
@@ -188,7 +194,7 @@ func (con postControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con postControllerImpl) GetByUser(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
 		return
@@ -268,7 +274,7 @@ func (con postControllerImpl) GetPopularToday(w http.ResponseWriter, r *http.Req
 }
 
 func (con postControllerImpl) UpdateContent(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	postID, err := delivery.ParseUintParam(r, "postid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
 		return
@@ -283,7 +289,7 @@ func (con postControllerImpl) UpdateContent(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = con.serv.UpdateContent(id, updateReq.Content)
+	err = con.serv.UpdateContent(postID, updateReq.Content)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
@@ -301,7 +307,7 @@ func (con postControllerImpl) UpdateContent(w http.ResponseWriter, r *http.Reque
 }
 
 func (con postControllerImpl) UpdateDescription(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	postID, err := delivery.ParseUintParam(r, "postid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
 		return
@@ -316,7 +322,7 @@ func (con postControllerImpl) UpdateDescription(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = con.serv.UpdateDescription(id, updateReq.Description)
+	err = con.serv.UpdateDescription(postID, updateReq.Description)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return
@@ -334,7 +340,7 @@ func (con postControllerImpl) UpdateDescription(w http.ResponseWriter, r *http.R
 }
 
 func (con postControllerImpl) UpdateTitle(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	postID, err := delivery.ParseUintParam(r, "postid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid provided ID")
 		return
@@ -349,7 +355,7 @@ func (con postControllerImpl) UpdateTitle(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = con.serv.UpdateTitle(id, updateReq.Title)
+	err = con.serv.UpdateTitle(postID, updateReq.Title)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid parameters provided")
 		return

@@ -48,16 +48,14 @@ func (con profileControllerImpl) AddFollow(w http.ResponseWriter, r *http.Reques
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid userID provided")
 		return
 	}
-	var addFollowReq struct {
-		FollowedID uint `json:"FollowedID"`
-	}
-	err = delivery.ReadJSONRequest(r, &addFollowReq)
+
+	followedID, err := delivery.ParseUintParam(r, "followedid")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid userID provided")
 		return
 	}
 
-	err = con.serv.AddFollow(userID, addFollowReq.FollowedID)
+	err = con.serv.AddFollow(userID, followedID)
 	if err == service.ErrAlreadyExisting {
 		delivery.WriteResponse(w, http.StatusConflict, "This follow already exists")
 		return
@@ -147,16 +145,12 @@ func (con profileControllerImpl) DeleteFollow(w http.ResponseWriter, r *http.Req
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
 	}
 
-	var addFollowReq struct {
-		FollowedID uint `json:"FollowedID"`
-	}
-	err = delivery.ReadJSONRequest(r, &addFollowReq)
+	followedID, err := delivery.ParseUintParam(r, "followedid")
 	if err != nil {
-		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
-		return
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
 	}
 
-	err = con.serv.DeleteFollow(userID, addFollowReq.FollowedID)
+	err = con.serv.DeleteFollow(userID, followedID)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
 		return

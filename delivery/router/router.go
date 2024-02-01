@@ -96,10 +96,10 @@ func initializeProfileRoutes(router *mux.Router, db *sql.DB) {
 	router.HandleFunc("/profiles/{userid:[0-9]+}/backgroundpath",
 		middleware.Auth(controller.UpdateBackgroundPath)).Methods("PUT")
 
-	router.HandleFunc("/profiles/{userid:[0-9]+}/follows",
+	router.HandleFunc("/profiles/{userid:[0-9]+}/follows/{followedid:[0-9]+}",
 		middleware.Auth(controller.AddFollow)).Methods("POST")
 
-	router.HandleFunc("/profiles/{userid:[0-9]+}/follows",
+	router.HandleFunc("/profiles/{userid:[0-9]+}/follows/{followedid:[0-9]+}",
 		middleware.Auth(controller.DeleteFollow)).Methods("DELETE")
 
 	router.HandleFunc("/profiles/{userid:[0-9]+}",
