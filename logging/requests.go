@@ -9,8 +9,9 @@ func LogRequest(r *http.Request) {
 	msg := `
   [REQUEST] Route: %s,
   [REQUEST] Method: %s,
+	[REQUEST] Authorization Token: %s
   `
-	log.Printf(msg, r.URL.Path, r.Method)
+	log.Printf(msg, r.URL.Path, r.Method, r.Header.Get("Authorization"))
 }
 
 func LogResponse(statusCode int, data interface{}) {

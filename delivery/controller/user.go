@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
@@ -122,15 +121,12 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwtToken",
-		Value:    tokenStr,
-		Expires:  time.Now().Add(time.Minute * 10),
-		HttpOnly: true,
-		Secure:   true,
-	})
-
-	delivery.WriteResponse(w, http.StatusOK, "Authenticated correctly")
+	response := struct {
+		Token string `json:"Token"`
+	}{
+		Token: tokenStr,
+	}
+	delivery.WriteJSONResponse(w, http.StatusOK, response)
 }
 
 func (con userControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {

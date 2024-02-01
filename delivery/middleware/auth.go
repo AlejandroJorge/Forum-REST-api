@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
@@ -12,13 +13,11 @@ import (
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	serv := service.NewUserService(repository.NewSQLiteUserRepository(config.SQLiteDatabase()))
 	return func(w http.ResponseWriter, r *http.Request) {
-		authCookie, err := r.Cookie("jwtToken")
-		if err != nil {
-			delivery.WriteResponse(w, http.StatusBadRequest, "No auth cookie provided")
+		tokenStr := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if tokenStr == "" {
+			delivery.WriteResponse(w, http.StatusBadRequest, "No auth header provided")
 			return
 		}
-
-		tokenStr := authCookie.Value
 
 		id, err := delivery.ParseUintParam(r, "userid")
 		if err != nil {
