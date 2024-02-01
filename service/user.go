@@ -1,6 +1,8 @@
 package service
 
 import (
+	"strings"
+
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/logging"
@@ -64,6 +66,8 @@ func (serv userServiceImpl) Create(email, password string) (uint, error) {
 		return 0, ErrIncorrectParameters
 	}
 
+	email = strings.ToLower(email)
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
 		logging.LogDomainError(ErrPasswordUnableToHash)
@@ -105,6 +109,8 @@ func (serv userServiceImpl) GetByEmail(email string) (domain.User, error) {
 		return domain.User{}, ErrIncorrectParameters
 	}
 
+	email = strings.ToLower(email)
+
 	user, err := serv.repo.GetByEmail(email)
 	if err == repository.ErrEmptySelection {
 		logging.LogDomainError(ErrNotExistingEntity)
@@ -142,6 +148,8 @@ func (serv userServiceImpl) UpdateEmail(id uint, email string) error {
 		logging.LogDomainError(ErrIncorrectParameters)
 		return ErrIncorrectParameters
 	}
+
+	email = strings.ToLower(email)
 
 	err := serv.repo.UpdateEmail(id, email)
 	if err == repository.ErrNoRowsAffected {
@@ -187,6 +195,8 @@ func (serv userServiceImpl) CheckCredentials(email, password string) error {
 		logging.LogDomainError(ErrIncorrectParameters)
 		return ErrIncorrectParameters
 	}
+
+	email = strings.ToLower(email)
 
 	user, err := serv.repo.GetByEmail(email)
 	if err == repository.ErrEmptySelection {

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"strings"
+
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
@@ -41,6 +43,8 @@ func (serv profileServiceImpl) Create(userID uint, tagName, displayName string) 
 		logging.LogDomainError(ErrIncorrectParameters)
 		return 0, ErrIncorrectParameters
 	}
+
+	tagName = strings.ToLower(tagName)
 
 	id, err := serv.repo.Create(userID, tagName, displayName)
 	if err == repository.ErrNoMatchingDependency {
@@ -106,6 +110,8 @@ func (serv profileServiceImpl) GetByTagName(tagName string) (domain.Profile, err
 		return domain.Profile{}, ErrIncorrectParameters
 	}
 
+	tagName = strings.ToLower(tagName)
+
 	profile, err := serv.repo.GetByTagName(tagName)
 	if err == repository.ErrEmptySelection {
 		logging.LogDomainError(ErrNotExistingEntity)
@@ -167,6 +173,8 @@ func (serv profileServiceImpl) GetFollowersByTagName(tagName string) ([]domain.P
 		return nil, ErrIncorrectParameters
 	}
 
+	tagName = strings.ToLower(tagName)
+
 	profiles, err := serv.repo.GetFollowersByTagName(tagName)
 	if err == repository.ErrEmptySelection {
 		logging.LogDomainError(ErrNotExistingEntity)
@@ -209,6 +217,8 @@ func (serv profileServiceImpl) GetFollowsByTagName(tagName string) ([]domain.Pro
 		return nil, ErrIncorrectParameters
 	}
 
+	tagName = strings.ToLower(tagName)
+
 	profiles, err := serv.repo.GetFollowsByTagName(tagName)
 	if err == repository.ErrEmptySelection {
 		logging.LogDomainError(ErrNotExistingEntity)
@@ -229,6 +239,8 @@ func (serv profileServiceImpl) UpdateTagName(id uint, tagName string) error {
 		logging.LogDomainError(ErrIncorrectParameters)
 		return ErrIncorrectParameters
 	}
+
+	tagName = strings.ToLower(tagName)
 
 	err := serv.repo.UpdateTagName(id, tagName)
 	if err == repository.ErrNoRowsAffected {
