@@ -168,7 +168,7 @@ func initializeCommentRoutes(router *mux.Router, db *sql.DB) {
 	router.HandleFunc("/posts/{postid:[0-9]+}/comments",
 		controller.GetByPost).Methods("GET")
 
-	router.HandleFunc("/users/{userid:[0-9]+}/comments/{id:[0-9]+}",
+	router.HandleFunc("/users/{userid:[0-9]+}/comments/{commentid:[0-9]+}",
 		middleware.Auth(controller.UpdateContent)).Methods("PUT")
 
 	router.HandleFunc("/users/{userid:[0-9]+}/comments/{commentid:[0-9]+}/likes",
@@ -177,6 +177,6 @@ func initializeCommentRoutes(router *mux.Router, db *sql.DB) {
 	router.HandleFunc("/users/{userid:[0-9]+}/comments/{commentid:[0-9]+}/likes",
 		middleware.Auth(controller.DeleteLike)).Methods("DELETE")
 
-	router.HandleFunc("/users/{userid:[0-9]+}/comments/{id:[0-9]+}",
+	router.HandleFunc("/users/{userid:[0-9]+}/comments/{commentid:[0-9]+}",
 		middleware.Auth(controller.Delete)).Methods("DELETE")
 }
