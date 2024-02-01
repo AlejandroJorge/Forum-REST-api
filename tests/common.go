@@ -1,6 +1,10 @@
 package tests
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
@@ -25,4 +29,13 @@ func AssertEqu(expected interface{}, got interface{}, t *testing.T) {
 	if expected != got {
 		t.Errorf("Expected '%v', got '%v'", expected, got)
 	}
+}
+
+func CreateRequest(method, path string, body interface{}) (*http.Request, error) {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	reader := bytes.NewReader(jsonBody)
+	return httptest.NewRequest(method, path, reader), nil
 }
