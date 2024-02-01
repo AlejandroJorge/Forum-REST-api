@@ -61,7 +61,8 @@ Where is development going right now
 - [x] Refactor controllers with error handling
 - [x] Implement auth for every necessary operation
 - [x] Normalize email, tagnames
-- [ ] Test every endpoint
+- [ ] Integration Test
+- [ ] Documentation for every endpoint
 
 ## Next features
 
