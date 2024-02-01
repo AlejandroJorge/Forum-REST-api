@@ -1,16 +1,16 @@
 package middleware
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/delivery"
-	"github.com/golang-jwt/jwt"
+	"github.com/AlejandroJorge/forum-rest-api/repository"
+	"github.com/AlejandroJorge/forum-rest-api/service"
 )
 
 func Auth(next http.HandlerFunc) http.HandlerFunc {
+	serv := service.NewUserService(repository.NewSQLiteUserRepository(config.SQLiteDatabase()))
 	return func(w http.ResponseWriter, r *http.Request) {
 		authCookie, err := r.Cookie("jwtToken")
 		if err != nil {
@@ -20,43 +20,26 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenStr := authCookie.Value
 
-		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("Not corresponding signing method")
-			}
-
-			return config.GetParams().AuthSecret, nil
-		})
+		id, err := delivery.ParseUintParam(r, "userid")
 		if err != nil {
-			fmt.Println(err)
-			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid authentication token")
+			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid user ID provided")
 			return
 		}
 
-		id, err := delivery.ParseUintParam(r, "id")
+		err = serv.Authorize(id, tokenStr)
+		if err == service.ErrNotExistingEntity {
+			delivery.WriteResponse(w, http.StatusNotFound, "The user doesn't exist")
+			return
+		}
+		if err == service.ErrNotValidCredentials {
+			delivery.WriteResponse(w, http.StatusUnauthorized, "You're not authorized to this resource")
+			return
+		}
 		if err != nil {
-			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID")
+			delivery.WriteResponse(w, http.StatusInternalServerError, "")
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid claims")
-			return
-		}
-
-		rawIssuerID, ok := claims["iss"]
-		if !ok {
-			delivery.WriteResponse(w, http.StatusBadRequest, "Invalid claims")
-			return
-		}
-
-		issuerID := rawIssuerID.(float64)
-
-		if uint(issuerID) == id {
-			next(w, r)
-		} else {
-			delivery.WriteResponse(w, http.StatusUnauthorized, "You're not authorized for this resource")
-		}
+		next(w, r)
 	}
 }

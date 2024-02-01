@@ -89,6 +89,10 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 		delivery.WriteResponse(w, http.StatusBadRequest, "There's no user for this email")
 		return
 	}
+	if err == service.ErrNotValidCredentials {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect password")
+		return
+	}
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusInternalServerError, "")
 		return
@@ -108,10 +112,8 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	expireDate := time.Now().Add(time.Minute * 10)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss": user.ID,
-		"exp": expireDate.Unix(),
+		"email": user.Email,
 	})
 
 	tokenStr, err := token.SignedString(config.GetParams().AuthSecret)
@@ -123,7 +125,7 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwtToken",
 		Value:    tokenStr,
-		Expires:  expireDate,
+		Expires:  time.Now().Add(time.Minute * 10),
 		HttpOnly: true,
 		Secure:   true,
 	})
@@ -132,7 +134,7 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 }
 
 func (con userControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -156,7 +158,7 @@ func (con userControllerImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (con userControllerImpl) UpdateEmail(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -189,7 +191,7 @@ func (con userControllerImpl) UpdateEmail(w http.ResponseWriter, r *http.Request
 }
 
 func (con userControllerImpl) UpdatePassword(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -226,7 +228,7 @@ func (con userControllerImpl) UpdatePassword(w http.ResponseWriter, r *http.Requ
 }
 
 func (con userControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return

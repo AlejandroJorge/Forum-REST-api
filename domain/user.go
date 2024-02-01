@@ -66,4 +66,7 @@ type UserService interface {
 
 	// Returns nil if credentials are OK, can return ErrIncorrectParameters, ErrNotValidCredentials, ErrNotExistingEntity
 	CheckCredentials(email, password string) error
+
+	// Returns nil if user is authorized, can return ErrNotValidCredentials, ErrNotExistingEntity
+	Authorize(id uint, jwtTokenString string) error
 }

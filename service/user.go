@@ -1,15 +1,60 @@
 package service
 
 import (
+	"github.com/AlejandroJorge/forum-rest-api/config"
 	"github.com/AlejandroJorge/forum-rest-api/domain"
 	"github.com/AlejandroJorge/forum-rest-api/logging"
 	"github.com/AlejandroJorge/forum-rest-api/repository"
 	"github.com/AlejandroJorge/forum-rest-api/util"
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userServiceImpl struct {
 	repo domain.UserRepository
+}
+
+// Returns nil if user is authorized, can return ErrNotValidCredentials, ErrNotExistingEntity
+func (serv userServiceImpl) Authorize(id uint, jwtTokenString string) error {
+	user, err := serv.repo.GetByID(id)
+	if err == repository.ErrEmptySelection {
+		logging.LogDomainError(ErrNotExistingEntity)
+		return ErrNotExistingEntity
+	}
+	if err != nil {
+		logging.LogUnexpectedDomainError(err)
+		return ErrUnknown
+	}
+
+	token, err := jwt.Parse(jwtTokenString, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrNotValidCredentials
+		}
+		return config.GetParams().AuthSecret, nil
+	})
+	if err != nil {
+		logging.LogDomainError(ErrNotValidCredentials)
+		return ErrNotValidCredentials
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		logging.LogDomainError(ErrNotValidCredentials)
+		return ErrNotValidCredentials
+	}
+
+	emailFromClaims, ok := claims["email"]
+	if !ok {
+		logging.LogDomainError(ErrNotValidCredentials)
+		return ErrNotValidCredentials
+	}
+
+	if emailFromClaims != user.Email {
+		logging.LogDomainError(ErrNotValidCredentials)
+		return ErrNotValidCredentials
+	}
+
+	return nil
 }
 
 // Returns the ID of the created user, can return ErrIncorrectParameters, ErrPasswordUnableToHash, ErrExistingEmail
