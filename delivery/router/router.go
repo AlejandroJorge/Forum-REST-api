@@ -64,7 +64,7 @@ func initializeProfileRoutes(router *mux.Router, db *sql.DB) {
 	controller := controller.NewProfileController(service)
 
 	router.HandleFunc("/users/{userid:[0-9]+}/profiles",
-		controller.Create).Methods("POST")
+		middleware.Auth(controller.Create)).Methods("POST")
 
 	router.HandleFunc("/profiles/{userid:[0-9]+}",
 		controller.GetByUserID).Methods("GET")

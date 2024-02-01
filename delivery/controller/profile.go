@@ -43,17 +43,21 @@ type profileControllerImpl struct {
 }
 
 func (con profileControllerImpl) AddFollow(w http.ResponseWriter, r *http.Request) {
+	userID, err := delivery.ParseUintParam(r, "userid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid userID provided")
+		return
+	}
 	var addFollowReq struct {
-		FollowerID uint `json:"FollowerID"`
 		FollowedID uint `json:"FollowedID"`
 	}
-	err := delivery.ReadJSONRequest(r, &addFollowReq)
+	err = delivery.ReadJSONRequest(r, &addFollowReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	err = con.serv.AddFollow(addFollowReq.FollowerID, addFollowReq.FollowedID)
+	err = con.serv.AddFollow(userID, addFollowReq.FollowedID)
 	if err == service.ErrAlreadyExisting {
 		delivery.WriteResponse(w, http.StatusConflict, "This follow already exists")
 		return
@@ -75,18 +79,23 @@ func (con profileControllerImpl) AddFollow(w http.ResponseWriter, r *http.Reques
 }
 
 func (con profileControllerImpl) Create(w http.ResponseWriter, r *http.Request) {
+	userID, err := delivery.ParseUintParam(r, "userid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
+		return
+	}
+
 	var createReq struct {
-		UserID      uint   `json:"UserID"`
 		DisplayName string `json:"DisplayName"`
 		TagName     string `json:"TagName"`
 	}
-	err := delivery.ReadJSONRequest(r, &createReq)
+	err = delivery.ReadJSONRequest(r, &createReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	id, err := con.serv.Create(createReq.UserID, createReq.TagName, createReq.DisplayName)
+	id, err := con.serv.Create(userID, createReq.TagName, createReq.DisplayName)
 	if err == service.ErrDependencyNotSatisfied {
 		delivery.WriteResponse(w, http.StatusBadRequest, "User doesn't exist")
 		return
@@ -113,7 +122,7 @@ func (con profileControllerImpl) Create(w http.ResponseWriter, r *http.Request) 
 }
 
 func (con profileControllerImpl) Delete(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -133,17 +142,21 @@ func (con profileControllerImpl) Delete(w http.ResponseWriter, r *http.Request) 
 }
 
 func (con profileControllerImpl) DeleteFollow(w http.ResponseWriter, r *http.Request) {
+	userID, err := delivery.ParseUintParam(r, "userid")
+	if err != nil {
+		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid ID provided")
+	}
+
 	var addFollowReq struct {
-		FollowerID uint `json:"FollowerID"`
 		FollowedID uint `json:"FollowedID"`
 	}
-	err := delivery.ReadJSONRequest(r, &addFollowReq)
+	err = delivery.ReadJSONRequest(r, &addFollowReq)
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect request format")
 		return
 	}
 
-	err = con.serv.DeleteFollow(addFollowReq.FollowerID, addFollowReq.FollowedID)
+	err = con.serv.DeleteFollow(userID, addFollowReq.FollowedID)
 	if err == service.ErrIncorrectParameters {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Incorrect parameters provided")
 		return
@@ -181,7 +194,7 @@ func (con profileControllerImpl) GetByTagName(w http.ResponseWriter, r *http.Req
 }
 
 func (con profileControllerImpl) GetByUserID(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -205,7 +218,7 @@ func (con profileControllerImpl) GetByUserID(w http.ResponseWriter, r *http.Requ
 }
 
 func (con profileControllerImpl) GetFollowersByID(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -253,7 +266,7 @@ func (con profileControllerImpl) GetFollowersByTagName(w http.ResponseWriter, r 
 }
 
 func (con profileControllerImpl) GetFollowsByID(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid tagname provided")
 		return
@@ -301,7 +314,7 @@ func (con profileControllerImpl) GetFollowsByTagName(w http.ResponseWriter, r *h
 }
 
 func (con profileControllerImpl) UpdateBackgroundPath(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -330,7 +343,7 @@ func (con profileControllerImpl) UpdateBackgroundPath(w http.ResponseWriter, r *
 }
 
 func (con profileControllerImpl) UpdateDisplayName(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -359,7 +372,7 @@ func (con profileControllerImpl) UpdateDisplayName(w http.ResponseWriter, r *htt
 }
 
 func (con profileControllerImpl) UpdatePicturePath(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
@@ -388,7 +401,7 @@ func (con profileControllerImpl) UpdatePicturePath(w http.ResponseWriter, r *htt
 }
 
 func (con profileControllerImpl) UpdateTagName(w http.ResponseWriter, r *http.Request) {
-	id, err := delivery.ParseUintParam(r, "id")
+	id, err := delivery.ParseUintParam(r, "userid")
 	if err != nil {
 		delivery.WriteResponse(w, http.StatusBadRequest, "Invalid id provided")
 		return
