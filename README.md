@@ -60,10 +60,8 @@ Where is development going right now
 - [x] Documentation in comments for services (errors, optional args, etc)
 - [x] Refactor controllers with error handling
 - [x] Implement auth for every necessary operation
-- [ ] Remake tests for repositories
-- [ ] Repository level validation for tests
-- [ ] Make tests for services
-- [ ] Make tests for controllers / routes
+- [ ] Normalize email, tagnames
+- [ ] Test every endpoint
 
 ## Next features
 
