@@ -1,6 +1,6 @@
-# Forum REST Api
+# Simpleddit API
 
-A simple REST Api for a forum like Reddit built in Go
+The REST API of a reddit clone
 
 # How to run locally
 

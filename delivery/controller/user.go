@@ -122,9 +122,11 @@ func (con userControllerImpl) CheckCredentials(w http.ResponseWriter, r *http.Re
 	}
 
 	response := struct {
-		Token string `json:"Token"`
+		Token  string `json:"Token"`
+		UserID uint   `json:"UserID"`
 	}{
-		Token: tokenStr,
+		Token:  tokenStr,
+		UserID: user.ID,
 	}
 	delivery.WriteJSONResponse(w, http.StatusOK, response)
 }
